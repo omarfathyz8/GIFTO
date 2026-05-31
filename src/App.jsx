@@ -49,12 +49,13 @@ const GiftStoreWebsite = () => {
     category: "",
     price: "",
     inventory: "",
-    image: "",
+    images: [],
     emoji: "",
     description: "",
   });
   const [editingProduct, setEditingProduct] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState({});
 
   const categories = [
     "All",
@@ -412,54 +413,86 @@ const GiftStoreWebsite = () => {
   };
 
   const handleImageUpload = (event, isEditing = false) => {
-    const file = event.target.files?.[0];
-    if (!file) {
+    const files = event.target.files;
+    if (!files || files.length === 0) {
       console.log("No file selected");
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
-      showToast("Please select a valid image file.", "error");
+    setUploadingImage(true);
+    let filesProcessed = 0;
+    const newImages = [];
+
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith("image/")) {
+        showToast(`Skipped ${file.name} - not an image file.`, "error");
+        filesProcessed++;
+        if (filesProcessed === files.length && newImages.length > 0) {
+          finishUpload(newImages, isEditing, event);
+        }
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        try {
+          const base64String = e.target?.result;
+          if (base64String) {
+            newImages.push(base64String);
+          }
+          filesProcessed++;
+
+          if (filesProcessed === files.length) {
+            finishUpload(newImages, isEditing, event);
+          }
+        } catch (error) {
+          console.error("Error processing image:", error);
+          filesProcessed++;
+          if (filesProcessed === files.length && newImages.length > 0) {
+            finishUpload(newImages, isEditing, event);
+          }
+        }
+      };
+
+      reader.onerror = (error) => {
+        console.error("FileReader error:", error);
+        filesProcessed++;
+        if (filesProcessed === files.length && newImages.length > 0) {
+          finishUpload(newImages, isEditing, event);
+        }
+      };
+
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const finishUpload = (newImages, isEditing, event) => {
+    if (newImages.length === 0) {
+      showToast("Failed to upload any images.", "error");
+      setUploadingImage(false);
       event.target.value = "";
       return;
     }
 
-    setUploadingImage(true);
-    const reader = new FileReader();
+    if (isEditing) {
+      setEditingProduct((prev) => ({
+        ...prev,
+        images: [...(prev.images || []), ...newImages],
+      }));
+    } else {
+      setNewProduct((prev) => ({
+        ...prev,
+        images: [...(prev.images || []), ...newImages],
+      }));
+    }
 
-    reader.onload = (e) => {
-      try {
-        const base64String = e.target?.result;
-        if (!base64String) {
-          showToast("Failed to read image file.", "error");
-          setUploadingImage(false);
-          return;
-        }
-
-        if (isEditing) {
-          setEditingProduct((prev) => ({ ...prev, image: base64String }));
-        } else {
-          setNewProduct((prev) => ({ ...prev, image: base64String }));
-        }
-
-        event.target.value = "";
-        showToast("Image uploaded successfully.", "success");
-      } catch (error) {
-        console.error("Error processing image:", error);
-        showToast("Failed to process image.", "error");
-      } finally {
-        setUploadingImage(false);
-      }
-    };
-
-    reader.onerror = (error) => {
-      console.error("FileReader error:", error);
-      showToast("Failed to read image file.", "error");
-      event.target.value = "";
-      setUploadingImage(false);
-    };
-
-    reader.readAsDataURL(file);
+    event.target.value = "";
+    showToast(
+      `${newImages.length} image${newImages.length > 1 ? "s" : ""} uploaded successfully.`,
+      "success",
+    );
+    setUploadingImage(false);
   };
 
   useEffect(() => {
@@ -473,6 +506,25 @@ const GiftStoreWebsite = () => {
 
     return () => clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    const intervals = products.map((product) => {
+      if (!product.images || product.images.length <= 1) return null;
+
+      return setInterval(() => {
+        setCurrentImageIndex((prev) => ({
+          ...prev,
+          [product.id]: ((prev[product.id] || 0) + 1) % product.images.length,
+        }));
+      }, 3000);
+    });
+
+    return () => {
+      intervals.forEach((interval) => {
+        if (interval) clearInterval(interval);
+      });
+    };
+  }, [products]);
 
   const dismissToast = () => setToast(null);
 
@@ -498,7 +550,7 @@ const GiftStoreWebsite = () => {
       inventory: Number.isFinite(Number(newProduct.inventory))
         ? Number(newProduct.inventory)
         : 0,
-      image: newProduct.image,
+      images: newProduct.images || [],
       emoji: newProduct.emoji,
       description: newProduct.description || "",
     });
@@ -507,7 +559,7 @@ const GiftStoreWebsite = () => {
       name: "",
       category: "",
       price: "",
-      image: "",
+      images: [],
       emoji: "",
       description: "",
     });
@@ -563,7 +615,7 @@ const GiftStoreWebsite = () => {
       inventory: Number.isFinite(Number(editingProduct.inventory))
         ? Number(editingProduct.inventory)
         : 0,
-      image: editingProduct.image,
+      images: editingProduct.images || [],
       emoji: editingProduct.emoji,
       description: editingProduct.description || "",
     });
@@ -879,17 +931,29 @@ const GiftStoreWebsite = () => {
           ) : filteredProducts.length === 0 ? (
             <p className="loading-state">No products available yet.</p>
           ) : (
-            filteredProducts.map((product) => (
-              <article key={product.id} className="product-card">
-                <div className="product-image">
-                  {product.image && product.image.startsWith("data:") ? (
-                    <img src={product.image} alt={product.name} />
-                  ) : product.emoji ? (
-                    <span className="product-emoji">{product.emoji}</span>
-                  ) : (
-                    <div className="no-image-placeholder">No image</div>
-                  )}
-                </div>
+            filteredProducts.map((product) => {
+              const images = product.images || [];
+              const currentIdx = currentImageIndex[product.id] || 0;
+              const currentImage = images[currentIdx];
+
+              return (
+                <article key={product.id} className="product-card">
+                  <div className="product-image">
+                    {currentImage && currentImage.startsWith("data:") ? (
+                      <>
+                        <img src={currentImage} alt={product.name} />
+                        {images.length > 1 && (
+                          <div className="image-indicator">
+                            {currentIdx + 1} / {images.length}
+                          </div>
+                        )}
+                      </>
+                    ) : product.emoji ? (
+                      <span className="product-emoji">{product.emoji}</span>
+                    ) : (
+                      <div className="no-image-placeholder">No image</div>
+                    )}
+                  </div>
                 <div className="product-body">
                   <p className="product-category">{product.category}</p>
                   <h2 className="product-title">{product.name}</h2>
@@ -983,7 +1047,8 @@ const GiftStoreWebsite = () => {
                   )}
                 </div>
               </article>
-            ))
+              );
+            })
           )}
         </section>
 
@@ -1130,11 +1195,27 @@ const GiftStoreWebsite = () => {
                     />
                   </label>
                   <label className="admin-label">
-                    Product Image
+                    Product Images (Multiple)
                     <div className="image-upload-container">
-                      {newProduct.image && (
-                        <div className="image-preview">
-                          <img src={newProduct.image} alt="Product preview" />
+                      {newProduct.images && newProduct.images.length > 0 && (
+                        <div className="image-preview-list">
+                          {newProduct.images.map((img, idx) => (
+                            <div key={idx} className="image-preview-item">
+                              <img src={img} alt={`Preview ${idx + 1}`} />
+                              <button
+                                type="button"
+                                className="remove-image-btn"
+                                onClick={() =>
+                                  setNewProduct((prev) => ({
+                                    ...prev,
+                                    images: prev.images.filter((_, i) => i !== idx),
+                                  }))
+                                }
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       )}
                       <input
@@ -1143,8 +1224,14 @@ const GiftStoreWebsite = () => {
                         onChange={(e) => handleImageUpload(e, false)}
                         className="admin-input"
                         disabled={uploadingImage}
+                        multiple
                       />
                       {uploadingImage && <span className="uploading-text">Uploading...</span>}
+                      {newProduct.images && newProduct.images.length > 0 && (
+                        <p className="image-count">
+                          {newProduct.images.length} image{newProduct.images.length !== 1 ? "s" : ""} added
+                        </p>
+                      )}
                     </div>
                   </label>
                   <label className="admin-label">
@@ -1666,7 +1753,7 @@ const GiftStoreWebsite = () => {
                 />
               </label>
               <label className="admin-label">
-                Product Image
+                Product Images (Multiple)
                 <div className="image-upload-container">
                   <input
                     type="file"
@@ -1674,8 +1761,14 @@ const GiftStoreWebsite = () => {
                     onChange={(e) => handleImageUpload(e, true)}
                     className="admin-input"
                     disabled={uploadingImage}
+                    multiple
                   />
                   {uploadingImage && <span className="uploading-text">Uploading...</span>}
+                  {editingProduct.images && editingProduct.images.length > 0 && (
+                    <p className="image-count">
+                      {editingProduct.images.length} image{editingProduct.images.length !== 1 ? "s" : ""} added
+                    </p>
+                  )}
                 </div>
               </label>
               <label className="admin-label">
