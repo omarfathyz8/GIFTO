@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from "react";
-import { ShoppingCart, X, Check, Heart, Search } from "lucide-react";
+import { ShoppingCart, X, Check, Heart, Search, Upload } from "lucide-react";
 import { auth, db } from "./firebase";
 import {
   onAuthStateChanged,
@@ -50,9 +50,11 @@ const GiftStoreWebsite = () => {
     price: "",
     inventory: "",
     image: "",
+    emoji: "",
     description: "",
   });
   const [editingProduct, setEditingProduct] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const categories = [
     "All",
@@ -409,6 +411,57 @@ const GiftStoreWebsite = () => {
     setToast({ message, type });
   };
 
+  const handleImageUpload = (event, isEditing = false) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      console.log("No file selected");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      showToast("Please select a valid image file.", "error");
+      event.target.value = "";
+      return;
+    }
+
+    setUploadingImage(true);
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const base64String = e.target?.result;
+        if (!base64String) {
+          showToast("Failed to read image file.", "error");
+          setUploadingImage(false);
+          return;
+        }
+
+        if (isEditing) {
+          setEditingProduct((prev) => ({ ...prev, image: base64String }));
+        } else {
+          setNewProduct((prev) => ({ ...prev, image: base64String }));
+        }
+
+        event.target.value = "";
+        showToast("Image uploaded successfully.", "success");
+      } catch (error) {
+        console.error("Error processing image:", error);
+        showToast("Failed to process image.", "error");
+      } finally {
+        setUploadingImage(false);
+      }
+    };
+
+    reader.onerror = (error) => {
+      console.error("FileReader error:", error);
+      showToast("Failed to read image file.", "error");
+      event.target.value = "";
+      setUploadingImage(false);
+    };
+
+    reader.readAsDataURL(file);
+  };
+
   useEffect(() => {
     if (!toast) {
       return undefined;
@@ -445,7 +498,8 @@ const GiftStoreWebsite = () => {
       inventory: Number.isFinite(Number(newProduct.inventory))
         ? Number(newProduct.inventory)
         : 0,
-      image: newProduct.image || "🎁",
+      image: newProduct.image,
+      emoji: newProduct.emoji,
       description: newProduct.description || "",
     });
 
@@ -454,6 +508,7 @@ const GiftStoreWebsite = () => {
       category: "",
       price: "",
       image: "",
+      emoji: "",
       description: "",
     });
     showToast("Product added successfully.", "success");
@@ -508,7 +563,8 @@ const GiftStoreWebsite = () => {
       inventory: Number.isFinite(Number(editingProduct.inventory))
         ? Number(editingProduct.inventory)
         : 0,
-      image: editingProduct.image || "🎁",
+      image: editingProduct.image,
+      emoji: editingProduct.emoji,
       description: editingProduct.description || "",
     });
 
@@ -582,6 +638,18 @@ const GiftStoreWebsite = () => {
         },
       ],
     });
+
+    for (const item of order.items) {
+      const product = products.find((p) => p.id === item.id);
+      if (product && product.dbKey) {
+        const newInventory =
+          (Number(product.inventory) || 0) + item.quantity;
+        await update(dbRef(db, `products/${product.dbKey}`), {
+          inventory: newInventory,
+        });
+      }
+    }
+
     showToast("Your order has been canceled.", "success");
   };
 
@@ -813,7 +881,15 @@ const GiftStoreWebsite = () => {
           ) : (
             filteredProducts.map((product) => (
               <article key={product.id} className="product-card">
-                <div className="product-image">{product.image}</div>
+                <div className="product-image">
+                  {product.image && product.image.startsWith("data:") ? (
+                    <img src={product.image} alt={product.name} />
+                  ) : product.emoji ? (
+                    <span className="product-emoji">{product.emoji}</span>
+                  ) : (
+                    <div className="no-image-placeholder">No image</div>
+                  )}
+                </div>
                 <div className="product-body">
                   <p className="product-category">{product.category}</p>
                   <h2 className="product-title">{product.name}</h2>
@@ -1054,11 +1130,29 @@ const GiftStoreWebsite = () => {
                     />
                   </label>
                   <label className="admin-label">
-                    Emoji image
+                    Product Image
+                    <div className="image-upload-container">
+                      {newProduct.image && (
+                        <div className="image-preview">
+                          <img src={newProduct.image} alt="Product preview" />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, false)}
+                        className="admin-input"
+                        disabled={uploadingImage}
+                      />
+                      {uploadingImage && <span className="uploading-text">Uploading...</span>}
+                    </div>
+                  </label>
+                  <label className="admin-label">
+                    Emoji (if no image)
                     <input
-                      value={newProduct.image}
+                      value={newProduct.emoji}
                       onChange={(e) =>
-                        setNewProduct({ ...newProduct, image: e.target.value })
+                        setNewProduct({ ...newProduct, emoji: e.target.value })
                       }
                       className="admin-input"
                     />
@@ -1131,7 +1225,20 @@ const GiftStoreWebsite = () => {
               {allOrders.length === 0 ? (
                 <p className="loading-state">No orders yet.</p>
               ) : (
-                allOrders.map((order) => (
+                (() => {
+                  const statusOrder = {
+                    pending: 1,
+                    processing: 2,
+                    shipped: 3,
+                    delivered: 4,
+                    cancelled: 5,
+                  };
+                  const sortedOrders = [...allOrders].sort(
+                    (a, b) =>
+                      (statusOrder[a.status || "pending"] || 6) -
+                      (statusOrder[b.status || "pending"] || 6),
+                  );
+                  return sortedOrders.map((order) => (
                   <article key={order.dbKey} className="order-manager-card">
                     <div className="order-manager-top">
                       <div>
@@ -1180,7 +1287,8 @@ const GiftStoreWebsite = () => {
                       </div>
                     )}
                   </article>
-                ))
+                  ));
+                })()
               )}
             </div>
           </section>
@@ -1558,13 +1666,26 @@ const GiftStoreWebsite = () => {
                 />
               </label>
               <label className="admin-label">
-                Emoji image
+                Product Image
+                <div className="image-upload-container">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, true)}
+                    className="admin-input"
+                    disabled={uploadingImage}
+                  />
+                  {uploadingImage && <span className="uploading-text">Uploading...</span>}
+                </div>
+              </label>
+              <label className="admin-label">
+                Emoji (if no image)
                 <input
-                  value={editingProduct.image}
+                  value={editingProduct.emoji || ""}
                   onChange={(e) =>
                     setEditingProduct({
                       ...editingProduct,
-                      image: e.target.value,
+                      emoji: e.target.value,
                     })
                   }
                   className="admin-input"
