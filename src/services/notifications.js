@@ -81,16 +81,16 @@ export const submitToGoogleForms = async (orderData, customerEmail) => {
   try {
     const formData = new FormData();
 
-    formData.append("entry.917210853", String(orderData.id));
-    formData.append("entry.715487332", String(orderData.name));
-    formData.append("entry.1632301772", String(customerEmail));
-    formData.append("entry.1096509358", String(orderData.phone));
-    formData.append("entry.1547634684", String(orderData.address));
-    formData.append("entry.516995551", orderData.items.map((i) => `${i.name} (x${i.quantity})`).join(", "));
-    formData.append("entry.794984993", String(orderData.total));
-    formData.append("entry.2073413885", String(orderData.paymentMethod));
-    formData.append("entry.1066455047", orderData.giftWrap ? "Yes" : "No");
-    formData.append("entry.1654766908", String(orderData.cardMessage || "None"));
+    formData.append("entry.364193299", String(orderData.id));
+    formData.append("entry.37797355", String(orderData.name));
+    formData.append("entry.677306714", String(customerEmail));
+    formData.append("entry.1848199176", String(orderData.phone));
+    formData.append("entry.1312113593", String(orderData.address));
+    formData.append("entry.251803140", orderData.items.map((i) => `${i.name} (x${i.quantity})`).join(", "));
+    formData.append("entry.1384354734", String(orderData.total));
+    formData.append("entry.1824052770", String(orderData.paymentMethod));
+    formData.append("entry.1691925111", orderData.giftWrap ? "Yes" : "No");
+    formData.append("entry.1907235798", String(orderData.cardMessage || "None"));
 
     const formUrl = `https://docs.google.com/forms/u/0/d/${GOOGLE_FORM_ID}/formResponse`;
 
