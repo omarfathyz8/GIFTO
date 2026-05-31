@@ -3,8 +3,8 @@ import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAnoS7gauujWnVECJRZXPDwlW94Kf3G-MQ",
-  authDomain: "gift-store-64745.firebaseapp.com",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   databaseURL:
     "https://gift-store-64745-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "gift-store-64745",
