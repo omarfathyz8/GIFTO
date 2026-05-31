@@ -16,6 +16,7 @@ import {
   push,
   serverTimestamp,
 } from "firebase/database";
+import { sendOrderEmail, submitToGoogleForms, sendAdminNotification } from "./services/notifications";
 import "./App.css";
 
 const GIFTOWebsite = () => {
@@ -743,6 +744,10 @@ const GIFTOWebsite = () => {
     };
 
     await set(orderRef, orderData);
+
+    sendOrderEmail(orderData, user.email);
+    sendAdminNotification(orderData, user.email);
+    submitToGoogleForms(orderData, user.email);
 
     for (const item of cart) {
       const product = products.find((p) => p.id === item.id);

@@ -1,0 +1,197 @@
+const BREVO_API_KEY = import.meta.env.VITE_BREVO_API_KEY;
+const BREVO_SENDER_EMAIL = import.meta.env.VITE_BREVO_SENDER_EMAIL;
+const BREVO_SENDER_NAME = import.meta.env.VITE_BREVO_SENDER_NAME;
+const GOOGLE_FORM_ID = import.meta.env.VITE_GOOGLE_FORM_ID;
+
+export const sendOrderEmail = async (orderData, customerEmail) => {
+  if (!BREVO_API_KEY) {
+    console.warn("Brevo API key not configured");
+    return false;
+  }
+
+  try {
+    const itemsList = orderData.items
+      .map((item) => `<li>${item.name} (x${item.quantity}) - ${item.price * item.quantity} LE</li>`)
+      .join("");
+
+    const htmlContent = `
+      <h2>Order Confirmation - #${orderData.id}</h2>
+      <p>Hello ${orderData.name},</p>
+      <p>Thank you for your order! Here are your order details:</p>
+
+      <h3>Order Items</h3>
+      <ul>
+        ${itemsList}
+      </ul>
+
+      <h3>Order Summary</h3>
+      <p><strong>Subtotal:</strong> ${orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0)} LE</p>
+      ${orderData.giftWrap ? `<p><strong>Gift Wrapping:</strong> 50 LE</p>` : ""}
+      ${orderData.cardMessage ? `<p><strong>Gift Message:</strong> 10 LE (${orderData.cardMessage})</p>` : ""}
+      <p><strong>Total:</strong> ${orderData.total} LE</p>
+
+      <p><strong>Payment Method:</strong> ${orderData.paymentMethod.toUpperCase()}</p>
+      <p><strong>Status:</strong> ${orderData.status}</p>
+
+      <p>We'll notify you when your order is shipped!</p>
+      <p>Best regards,<br>GIFTO Team</p>
+    `;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL,
+        },
+        to: [
+          {
+            email: customerEmail,
+            name: orderData.name,
+          },
+        ],
+        subject: `Order Confirmation - #${orderData.id}`,
+        htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Brevo API error:", await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error sending order email:", error);
+    return false;
+  }
+};
+
+export const submitToGoogleForms = async (orderData, customerEmail) => {
+  if (!GOOGLE_FORM_ID) {
+    console.warn("Google Form ID not configured");
+    return false;
+  }
+
+  try {
+    const formData = new FormData();
+
+    formData.append("entry.917210853", String(orderData.id));
+    formData.append("entry.969764372", new Date().toLocaleString());
+    formData.append("entry.715487332", String(orderData.name));
+    formData.append("entry.1632301772", String(customerEmail));
+    formData.append("entry.1096509358", String(orderData.phone));
+    formData.append("entry.1547634684", String(orderData.address));
+    formData.append("entry.516995551", orderData.items.map((i) => `${i.name} (x${i.quantity})`).join(", "));
+    formData.append("entry.794984993", String(orderData.total));
+    formData.append("entry.2073413885", String(orderData.paymentMethod));
+    formData.append("entry.1066455047", orderData.giftWrap ? "Yes" : "No");
+    formData.append("entry.1654766908", String(orderData.cardMessage || "None"));
+
+    const formUrl = `https://docs.google.com/forms/u/0/d/${GOOGLE_FORM_ID}/formResponse`;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.name = "hidden_iframe";
+    document.body.appendChild(iframe);
+
+    const form = document.createElement("form");
+    form.action = formUrl;
+    form.method = "POST";
+    form.target = "hidden_iframe";
+    form.style.display = "none";
+
+    formData.forEach((value, key) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    setTimeout(() => {
+      if (iframe.parentNode) {
+        document.body.removeChild(iframe);
+      }
+    }, 1000);
+
+    console.log("Google Forms submission sent");
+    return true;
+  } catch (error) {
+    console.error("Error submitting to Google Forms:", error);
+    return false;
+  }
+};
+
+export const sendAdminNotification = async (orderData, customerEmail) => {
+  if (!BREVO_API_KEY) {
+    console.warn("Brevo API key not configured");
+    return false;
+  }
+
+  try {
+    const itemsList = orderData.items
+      .map((item) => `<li>${item.name} (x${item.quantity})</li>`)
+      .join("");
+
+    const htmlContent = `
+      <h2>New Order Received! 🎉</h2>
+      <p><strong>Order ID:</strong> #${orderData.id}</p>
+
+      <h3>Customer Details</h3>
+      <p><strong>Name:</strong> ${orderData.name}</p>
+      <p><strong>Email:</strong> ${customerEmail}</p>
+      <p><strong>Phone:</strong> ${orderData.phone}</p>
+      <p><strong>Address:</strong> ${orderData.address}</p>
+
+      <h3>Items Ordered</h3>
+      <ul>
+        ${itemsList}
+      </ul>
+
+      <p><strong>Total:</strong> ${orderData.total} LE</p>
+      <p><strong>Payment Method:</strong> ${orderData.paymentMethod.toUpperCase()}</p>
+      <p><strong>Gift Wrap:</strong> ${orderData.giftWrap ? "Yes" : "No"}</p>
+      ${orderData.cardMessage ? `<p><strong>Message:</strong> ${orderData.cardMessage}</p>` : ""}
+    `;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL,
+        },
+        to: [
+          {
+            email: BREVO_SENDER_EMAIL,
+          },
+        ],
+        subject: `New Order - #${orderData.id}`,
+        htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Admin notification error:", await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error sending admin notification:", error);
+    return false;
+  }
+};
