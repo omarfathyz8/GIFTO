@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from "react";
 import { ShoppingCart, X, Check, Heart, Search, Upload } from "lucide-react";
 import { auth, db } from "./firebase";
+import logoImage from "./assets/logo.png";
 import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
@@ -17,7 +18,7 @@ import {
 } from "firebase/database";
 import "./App.css";
 
-const GiftStoreWebsite = () => {
+const GIFTOWebsite = () => {
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
   const [showWishlist, setShowWishlist] = useState(false);
@@ -516,7 +517,7 @@ const GiftStoreWebsite = () => {
           ...prev,
           [product.id]: ((prev[product.id] || 0) + 1) % product.images.length,
         }));
-      }, 3000);
+      }, 2500);
     });
 
     return () => {
@@ -781,16 +782,16 @@ const GiftStoreWebsite = () => {
       <header className="site-header">
         <div className="header-inner">
           <div className="brand">
-            <span className="brand-mark">✨</span>
+            <img src={logoImage} alt="GIFTO Logo" className="brand-logo" />
             <div>
-              <p className="brand-title">Gift Store</p>
-              <p className="brand-subtitle">Gifts inspired by Cairo markets</p>
+              <p className="brand-title">GIFTO</p>
+              <p className="brand-subtitle">Make it special</p>
             </div>
           </div>
 
           <div className="header-actions">
             <label className="search-box">
-              <Search size={18} />
+              <Search size={22} />
               <input
                 type="text"
                 aria-label="Search gifts"
@@ -831,9 +832,9 @@ const GiftStoreWebsite = () => {
                 onClick={() => setShowWishlist(true)}
                 aria-label="Open wishlist"
               >
-                <Heart size={22} />
+                <Heart size={24} />
                 {wishlists.size > 0 && (
-                  <span className="cart-badge wishlist-badge">
+                  <span className="wishlist-badge">
                     {wishlists.size}
                   </span>
                 )}
@@ -845,7 +846,7 @@ const GiftStoreWebsite = () => {
                 className="cart-toggle"
                 onClick={() => setShowCart(true)}
               >
-                <ShoppingCart size={22} />
+                <ShoppingCart size={24} />
                 {cart.length > 0 && (
                   <span className="cart-badge">{cart.length}</span>
                 )}
@@ -876,8 +877,8 @@ const GiftStoreWebsite = () => {
       <main>
         <section className="hero">
           <div className="hero-copy">
-            <p className="eyebrow">Curated gifts with premium packaging</p>
-            <h1>Find the perfect present for every celebration.</h1>
+            <img src={logoImage} alt="GIFTO Logo" className="hero-logo" />
+            <h1>The perfect gift for every celebration</h1>
             <p className="hero-text">
               Handpicked leather, perfume, décor and accessories delivered with
               care and local charm.
@@ -1879,9 +1880,9 @@ const GiftStoreWebsite = () => {
 
             <div className="payment-options">
               {[
-                { value: "fawry", label: "🔵 Fawry", note: "Most Popular" },
-                { value: "vodafone", label: "📱 Vodafone Cash" },
-                { value: "bank", label: "🏦 Bank Transfer" },
+                // { value: "fawry", label: "🔵 Fawry", note: "Most Popular" },
+                // { value: "vodafone", label: "📱 Vodafone Cash" },
+                // { value: "bank", label: "🏦 Bank Transfer" },
                 { value: "cod", label: "💵 Cash on Delivery" },
               ].map((option) => (
                 <label
@@ -1928,14 +1929,10 @@ const GiftStoreWebsite = () => {
       <footer className="site-footer">
         <div className="footer-inner">
           <div className="footer-column">
-            <h3>Gift Store</h3>
-            <p>Sourced from Cairo's markets, curated for you.</p>
-          </div>
-          <div className="footer-column">
             <h4>Contact</h4>
             {/* <p>📍 Gamal Abd ElNasser, Cairo</p> */}
             <p>
-              📧 <a href="mailto:help@giftstore.com">help@giftstore.com</a>
+              📧 <a href="mailto:help@gifto.com">help@gifto.com</a>
             </p>
             <p>
               📱 <a href="tel:+201234567890">+201234567890</a>
@@ -1948,13 +1945,31 @@ const GiftStoreWebsite = () => {
             {/* <p>🏦 Bank Transfer</p> */}
             <p>💵 COD</p>
           </div>
+          <div className="footer-column">
+            <h4>Social Media</h4>
+            <p>
+              <a href="https://facebook.com/gifto" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                Facebook
+              </a>
+            </p>
+            <p>
+              <a href="https://instagram.com/gifto" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                Instagram
+              </a>
+            </p>
+            <p>
+              <a href="https://tiktok.com/@gifto" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+                TikTok
+              </a>
+            </p>
+          </div>
         </div>
         <div className="footer-bottom">
-          <p>© 2026 Gifts of Grace. All rights reserved.</p>
+          <p>© 2026 GIFTO. All rights reserved.</p>
         </div>
       </footer>
     </div>
   );
 };
 
-export default GiftStoreWebsite;
+export default GIFTOWebsite;
