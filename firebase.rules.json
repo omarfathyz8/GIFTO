@@ -1,0 +1,20 @@
+{
+  "rules": {
+    "products": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email === 'admin@giftstore.com'"
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'admin@giftstore.com')",
+        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'admin@giftstore.com')"
+      }
+    },
+    "orders": {
+      "$orderId": {
+        ".read": "auth != null && (data.child('userId').val() === auth.uid || auth.token.email === 'admin@giftstore.com')",
+        ".write": "auth != null && (newData.child('userId').val() === auth.uid || auth.token.email === 'admin@giftstore.com')"
+      }
+    }
+  }
+}
