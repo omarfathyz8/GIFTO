@@ -1932,11 +1932,11 @@ const GIFTOWebsite = () => {
             <h4>Contact</h4>
             {/* <p>📍 Gamal Abd ElNasser, Cairo</p> */}
             <p>
-              📧 <a href="mailto:help@gifto.com">help@gifto.com</a>
+              📧 <a href="mailto:giftoo.storee@gmail.com">giftoo.storee@gmail.com</a>
             </p>
-            <p>
+            {/* <p>
               📱 <a href="tel:+201234567890">+201234567890</a>
-            </p>
+            </p> */}
           </div>
           <div className="footer-column">
             <h4>Payment Methods</h4>
@@ -1948,17 +1948,17 @@ const GIFTOWebsite = () => {
           <div className="footer-column">
             <h4>Social Media</h4>
             <p>
-              <a href="https://facebook.com/gifto" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+              <a href="https://facebook.com/giftoo.storee" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
                 Facebook
               </a>
             </p>
             <p>
-              <a href="https://instagram.com/gifto" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <a href="https://instagram.com/giftoo.storee" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
                 Instagram
               </a>
             </p>
             <p>
-              <a href="https://tiktok.com/@gifto" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+              <a href="https://tiktok.com/@giftoo.storee" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
                 TikTok
               </a>
             </p>
