@@ -33,6 +33,7 @@ export const sendOrderEmail = async (orderData, customerEmail) => {
       <p><strong>Payment Method:</strong> ${orderData.paymentMethod.toUpperCase()}</p>
       <p><strong>Status:</strong> ${orderData.status}</p>
 
+      <p>You can track your order status anytime at: <a href="https://giftoo-storee.vercel.app" style="color: #0066cc;">https://giftoo-storee.vercel.app</a></p>
       <p>We'll notify you when your order is shipped!</p>
       <p>Best regards,<br>GIFTO Team</p>
     `;
@@ -81,7 +82,6 @@ export const submitToGoogleForms = async (orderData, customerEmail) => {
     const formData = new FormData();
 
     formData.append("entry.917210853", String(orderData.id));
-    formData.append("entry.969764372", new Date().toLocaleString());
     formData.append("entry.715487332", String(orderData.name));
     formData.append("entry.1632301772", String(customerEmail));
     formData.append("entry.1096509358", String(orderData.phone));
@@ -148,8 +148,8 @@ export const sendAdminNotification = async (orderData, customerEmail) => {
 
       <h3>Customer Details</h3>
       <p><strong>Name:</strong> ${orderData.name}</p>
-      <p><strong>Email:</strong> ${customerEmail}</p>
-      <p><strong>Phone:</strong> ${orderData.phone}</p>
+      <p><strong>Email:</strong> <a href="mailto:${customerEmail}">${customerEmail}</a></p>
+      <p><strong>Phone:</strong> <a href="tel:${orderData.phone}">${orderData.phone}</a></p>
       <p><strong>Address:</strong> ${orderData.address}</p>
 
       <h3>Items Ordered</h3>

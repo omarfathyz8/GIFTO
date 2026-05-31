@@ -70,7 +70,7 @@ const GIFTOWebsite = () => {
     "Sets",
   ];
 
-  const isAdmin = user?.email === "admin@giftstore.com";
+  const isAdmin = user?.email === "admin@gifto.com";
   const isGuest = !user;
   const canUseCart = Boolean(user);
   const wishlistItems = products.filter((product) =>
