@@ -62,6 +62,7 @@ const GiftStoreWebsite = () => {
     "Medals",
     "Accessories",
     "Decor",
+    "Sets",
   ];
 
   const isAdmin = user?.email === "admin@giftstore.com";
@@ -622,6 +623,19 @@ const GiftStoreWebsite = () => {
 
     await set(orderRef, orderData);
 
+    for (const item of cart) {
+      const product = products.find((p) => p.id === item.id);
+      if (product && product.dbKey) {
+        const newInventory = Math.max(
+          (Number(product.inventory) || 0) - item.quantity,
+          0,
+        );
+        await update(dbRef(db, `products/${product.dbKey}`), {
+          inventory: newInventory,
+        });
+      }
+    }
+
     setCart([]);
     setShowCheckout(false);
     setGiftMessage("");
@@ -770,9 +784,9 @@ const GiftStoreWebsite = () => {
               <button
                 type="button"
                 className="secondary-button"
-                onClick={() => setSearchQuery("Perfumes")}
+                onClick={() => setSearchQuery("Sets")}
               >
-                Shop Perfumes
+                Shop Sets
               </button>
             </div>
           </div>
@@ -806,21 +820,19 @@ const GiftStoreWebsite = () => {
                   <p className="product-description">{product.description}</p>
                   <div className="product-meta">
                     <span className="product-price">{product.price} LE</span>
-                    <span
-                      className={`stock-status ${
-                        getAvailableInventory(product) === 0
-                          ? "stock-out"
-                          : getAvailableInventory(product) <= 5
-                            ? "stock-low"
-                            : "stock-in"
-                      }`}
-                    >
-                      {getAvailableInventory(product) === 0
-                        ? "Out of stock"
-                        : getAvailableInventory(product) <= 5
-                          ? `Only ${getAvailableInventory(product)} left`
-                          : `In stock: ${getAvailableInventory(product)}`}
-                    </span>
+                    {getAvailableInventory(product) > 5 ? null : (
+                      <span
+                        className={`stock-status ${
+                          getAvailableInventory(product) === 0
+                            ? "stock-out"
+                            : "stock-low"
+                        }`}
+                      >
+                        {getAvailableInventory(product) === 0
+                          ? "Out of stock"
+                          : `Only ${getAvailableInventory(product)} left`}
+                      </span>
+                    )}
                     {canUseCart && (
                       <button
                         type="button"
@@ -1077,7 +1089,18 @@ const GiftStoreWebsite = () => {
                     <div key={product.id} className="product-manager-card">
                       <div>
                         <p className="product-title">{product.name}</p>
-                        <p className="product-meta">{product.category}</p>
+                        {/* <p className="product-meta">{product.category}</p> */}
+                        <p
+                          className={`product-meta inventory-status ${
+                            product.inventory === 0
+                              ? "inventory-out"
+                              : product.inventory <= 5
+                                ? "inventory-low"
+                                : "inventory-good"
+                          }`}
+                        >
+                          Stock: {product.inventory}
+                        </p>
                       </div>
                       <div className="product-manager-actions">
                         <button
@@ -1677,10 +1700,11 @@ const GiftStoreWebsite = () => {
 
             <button
               type="button"
-              className="primary-button full-width"
+              className="complete-order-button"
               onClick={createOrder}
+              disabled={cart.length === 0}
             >
-              <Check size={20} />
+              <Check size={22} />
               Complete Order
             </button>
           </div>
