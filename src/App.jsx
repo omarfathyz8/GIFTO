@@ -60,6 +60,7 @@ const GIFTOWebsite = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState({});
   const [showProfile, setShowProfile] = useState(false);
   const [editingProfile, setEditingProfile] = useState(null);
+  const [cartLoaded, setCartLoaded] = useState(false);
 
   const categories = [
     "All",
@@ -136,11 +137,41 @@ const GIFTOWebsite = () => {
       wishlistRef,
       (snapshot) => {
         const value = snapshot.val() || {};
-        const savedIds = Object.keys(value).filter((key) => value[key]);
-        setWishlists(new Set(savedIds.map(String)));
+        const savedNames = Object.keys(value).filter((key) => value[key] !== null && value[key] !== undefined);
+        const savedIds = products
+          .filter((p) => savedNames.includes(p.name))
+          .map((p) => p.id.toString());
+        setWishlists(new Set(savedIds));
       },
       (error) => {
         console.error("Wishlist error:", error);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [user, products]);
+
+  useEffect(() => {
+    if (!user) {
+      setCartLoaded(false);
+      return undefined;
+    }
+
+    const cartRef = dbRef(db, `users/${user.uid}/cart`);
+    const unsubscribe = onValue(
+      cartRef,
+      (snapshot) => {
+        const value = snapshot.val();
+        if (value && Array.isArray(value)) {
+          setCart(value);
+        } else if (!value) {
+          setCart([]);
+        }
+        setCartLoaded(true);
+      },
+      (error) => {
+        console.error("Cart load error:", error);
+        setCartLoaded(true);
       },
     );
 
@@ -221,6 +252,17 @@ const GIFTOWebsite = () => {
     }
   }, [wishlists, user]);
 
+  useEffect(() => {
+    if (!user || !cartLoaded) return;
+
+    const timer = setTimeout(() => {
+      const cartRef = dbRef(db, `users/${user.uid}/cart`);
+      set(cartRef, cart.length > 0 ? cart : null);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [cart, user, cartLoaded]);
+
   const handleAuthSubmit = async (event) => {
     event.preventDefault();
     setToast(null);
@@ -266,6 +308,7 @@ const GIFTOWebsite = () => {
     showToast("Signed out successfully.", "success");
     setShowCart(false);
     setShowCheckout(false);
+    setCart([]);
     setWishlists(new Set());
     setShowProfile(false);
   };
@@ -317,71 +360,56 @@ const GIFTOWebsite = () => {
     setShowCheckout(true);
   };
 
-  const updateCartItemQuantity = (productId, quantity) => {
-    setCart((currentCart) =>
-      currentCart
-        .map((item) => (item.id === productId ? { ...item, quantity } : item))
-        .filter((item) => item.quantity > 0),
-    );
-  };
-
-  const increaseCartQuantity = (productId) => {
-    setCart((currentCart) =>
-      currentCart.map((item) =>
-        item.id === productId ? { ...item, quantity: item.quantity + 1 } : item,
-      ),
-    );
-  };
-
-  const decreaseCartQuantity = (productId) => {
+  const updateCartQuantity = (productId, delta = 0, newQuantity = null) => {
     setCart((currentCart) =>
       currentCart
         .map((item) =>
           item.id === productId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item,
+            ? { ...item, quantity: newQuantity ?? item.quantity + delta }
+            : item
         )
-        .filter((item) => item.quantity > 0),
+        .filter((item) => item.quantity > 0)
     );
   };
 
+  const increaseCartQuantity = (productId) => {
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+    const cartItem = cart.find((item) => item.id === productId);
+    if (cartItem && cartItem.quantity >= getInventory(product)) {
+      showToast("Not enough inventory available.", "error");
+      return;
+    }
+    updateCartQuantity(productId, 1);
+  };
+
+  const decreaseCartQuantity = (productId) => updateCartQuantity(productId, -1);
+
   const getProductQuantity = (productId) => {
-    return productQuantities[productId] || 0;
+    const product = products.find((p) => p.id === productId);
+    if (product && getInventory(product) === 0) return 0;
+    return productQuantities[productId] || 1;
+  };
+  const getCartQuantity = (productId) => cart.find((item) => item.id === productId)?.quantity || 0;
+  const getInventory = (product) => Number.isFinite(Number(product.inventory)) ? Number(product.inventory) : 0;
+  const getAvailableInventory = (product) => Math.max(getInventory(product) - getCartQuantity(product.id), 0);
+
+  const updateProductQuantity = (productId, delta, product = null) => {
+    const current = getProductQuantity(productId);
+    const newQty = Math.max(current + delta, 0);
+    const available = product ? getAvailableInventory(product) : Infinity;
+    if (newQty > available) return;
+
+    setProductQuantities((prev) => ({ ...prev, [productId]: newQty }));
   };
 
-  const getCartQuantity = (productId) => {
-    return cart.find((item) => item.id === productId)?.quantity || 0;
-  };
-
-  const getAvailableInventory = (product) => {
-    const inventory = Number.isFinite(Number(product.inventory))
-      ? Number(product.inventory)
-      : 0;
-    return Math.max(inventory - getCartQuantity(product.id), 0);
-  };
-
-  const incrementProductQuantity = (product) => {
-    const currentQuantity = getProductQuantity(product.id);
-    const available = getAvailableInventory(product);
-    if (currentQuantity >= available) return;
-
-    setProductQuantities((current) => ({
-      ...current,
-      [product.id]: currentQuantity + 1,
-    }));
-  };
-
-  const decrementProductQuantity = (productId) => {
-    setProductQuantities((current) => ({
-      ...current,
-      [productId]: Math.max((current[productId] || 0) - 1, 0),
-    }));
-  };
+  const incrementProductQuantity = (product) => updateProductQuantity(product.id, 1, product);
+  const decrementProductQuantity = (productId) => updateProductQuantity(productId, -1);
 
   const addToCart = (product, quantity = 1) => {
     const available = getAvailableInventory(product);
     if (available === 0) {
-      showToast("This product is out of stock.", "error");
+      showToast("Wait for a restock soon.", "error");
       return;
     }
     const quantityToAdd = Math.min(quantity, available);
@@ -409,22 +437,23 @@ const GIFTOWebsite = () => {
   };
 
   const toggleWishlist = async (productId) => {
-    const productKey = productId.toString();
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+
+    const isWishlisted = wishlists.has(product.id.toString());
     const updatedWishlist = new Set(wishlists);
 
-    if (updatedWishlist.has(productKey)) {
-      updatedWishlist.delete(productKey);
-      if (user) {
-        await set(dbRef(db, `users/${user.uid}/wishlist/${productKey}`), null);
-      }
+    if (isWishlisted) {
+      updatedWishlist.delete(product.id.toString());
     } else {
-      updatedWishlist.add(productKey);
-      if (user) {
-        await set(dbRef(db, `users/${user.uid}/wishlist/${productKey}`), true);
-      }
+      updatedWishlist.add(product.id.toString());
     }
 
     setWishlists(updatedWishlist);
+
+    if (user) {
+      await set(dbRef(db, `users/${user.uid}/wishlist/${product.name}`), isWishlisted ? null : "");
+    }
   };
 
   const cartTotal = cart.reduce(
@@ -1061,7 +1090,7 @@ const GIFTOWebsite = () => {
                           className="quantity-button"
                           onClick={() => decrementProductQuantity(product.id)}
                           aria-label={`Decrease quantity of ${product.name}`}
-                          disabled={getProductQuantity(product.id) === 0}
+                          disabled={getProductQuantity(product.id) <= 1}
                         >
                           −
                         </button>
@@ -1092,7 +1121,6 @@ const GIFTOWebsite = () => {
                             [product.id]: 0,
                           }));
                         }}
-                        disabled={getAvailableInventory(product) === 0}
                       >
                         Add to Cart
                       </button>
@@ -1582,6 +1610,7 @@ const GIFTOWebsite = () => {
                             className="quantity-button"
                             onClick={() => increaseCartQuantity(item.id)}
                             aria-label={`Increase quantity of ${item.name}`}
+                            disabled={item.quantity >= getInventory(products.find((p) => p.id === item.id)) || getInventory(products.find((p) => p.id === item.id)) === 0}
                           >
                             +
                           </button>
@@ -1717,6 +1746,11 @@ const GIFTOWebsite = () => {
                         type="button"
                         className="primary-button small"
                         onClick={() => {
+                          const available = getAvailableInventory(product);
+                          if (available === 0) {
+                            showToast("Wait for a restock soon.", "error");
+                            return;
+                          }
                           addToCart(product, 1);
                           toggleWishlist(product.id);
                           setShowWishlist(false);
@@ -2034,6 +2068,7 @@ const GIFTOWebsite = () => {
                           className="quantity-button"
                           onClick={() => increaseCartQuantity(item.id)}
                           aria-label={`Increase quantity of ${item.name}`}
+                          disabled={item.quantity >= getInventory(products.find((p) => p.id === item.id)) || getInventory(products.find((p) => p.id === item.id)) === 0}
                         >
                           +
                         </button>
