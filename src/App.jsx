@@ -58,6 +58,8 @@ const GIFTOWebsite = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState({});
+  const [showProfile, setShowProfile] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(null);
 
   const categories = [
     "All",
@@ -265,6 +267,45 @@ const GIFTOWebsite = () => {
     setShowCart(false);
     setShowCheckout(false);
     setWishlists(new Set());
+    setShowProfile(false);
+  };
+
+  const handleStartEditProfile = () => {
+    if (userProfile) {
+      setEditingProfile({ ...userProfile });
+    }
+  };
+
+  const handleCancelEditProfile = () => {
+    setEditingProfile(null);
+  };
+
+  const handleUpdateProfile = async (event) => {
+    event.preventDefault();
+    setToast(null);
+
+    if (!user || !editingProfile) {
+      showToast("Unable to update profile.", "error");
+      return;
+    }
+
+    if (!editingProfile.name || !editingProfile.address || !editingProfile.phone) {
+      showToast("Name, address, and phone are required.", "error");
+      return;
+    }
+
+    try {
+      const userRef = dbRef(db, `users/${user.uid}`);
+      await update(userRef, {
+        name: editingProfile.name,
+        address: editingProfile.address,
+        phone: editingProfile.phone,
+      });
+      showToast("Profile updated successfully.", "success");
+      setEditingProfile(null);
+    } catch (error) {
+      showToast(error.message, "error");
+    }
   };
 
   const handleCheckoutClick = () => {
@@ -406,7 +447,12 @@ const GIFTOWebsite = () => {
   };
 
   const getUserDisplayName = () => {
-    return userProfile?.name || "GUEST";
+    const fullName = userProfile?.name || "GUEST";
+    if (fullName === "GUEST") return fullName;
+    const nameParts = fullName.trim().split(/\s+/);
+    return nameParts.length >= 2
+      ? `${nameParts[0]} ${nameParts[nameParts.length - 1]}`
+      : fullName;
   };
 
   const showToast = (message, type = "success") => {
@@ -811,15 +857,12 @@ const GIFTOWebsite = () => {
             </label>
             {user ? (
               <div className="user-actions">
-                <span className="user-chip">
-                  Hello, {getUserDisplayName(user)}
-                </span>
                 <button
                   type="button"
-                  className="secondary-button small"
-                  onClick={handleSignOut}
+                  className="profile-button small"
+                  onClick={() => setShowProfile(true)}
                 >
-                  Sign Out
+                  {getUserDisplayName(user)}
                 </button>
               </div>
             ) : (
@@ -1820,6 +1863,130 @@ const GIFTOWebsite = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showProfile && user && (
+        <div className="overlay" role="dialog" aria-modal="true">
+          <div className="modal-card">
+            <button
+              type="button"
+              className="modal-close"
+              onClick={() => setShowProfile(false)}
+            >
+              <X size={24} />
+            </button>
+            <h2 className="modal-title">My Profile</h2>
+            {editingProfile ? (
+              <form className="auth-form" onSubmit={handleUpdateProfile}>
+                <label className="auth-label">
+                  Full name
+                  <input
+                    type="text"
+                    value={editingProfile.name || ""}
+                    onChange={(e) =>
+                      setEditingProfile({
+                        ...editingProfile,
+                        name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </label>
+                <label className="auth-label">
+                  Email
+                  <input
+                    type="email"
+                    value={editingProfile.email || ""}
+                    disabled
+                  />
+                </label>
+                <label className="auth-label">
+                  Address
+                  <textarea
+                    value={editingProfile.address || ""}
+                    onChange={(e) =>
+                      setEditingProfile({
+                        ...editingProfile,
+                        address: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </label>
+                <label className="auth-label">
+                  Phone number
+                  <input
+                    type="tel"
+                    value={editingProfile.phone || ""}
+                    onChange={(e) =>
+                      setEditingProfile({
+                        ...editingProfile,
+                        phone: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </label>
+                <div className="profile-form-actions">
+                  <button type="submit" className="primary-button full-width">
+                    Save Changes
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button full-width"
+                    onClick={handleCancelEditProfile}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="profile-display">
+                <div className="profile-field">
+                  <p className="profile-label">Full name</p>
+                  <p className="profile-value">{userProfile?.name || "—"}</p>
+                </div>
+                <div className="profile-field">
+                  <p className="profile-label">Email</p>
+                  <p className="profile-value">{userProfile?.email || "—"}</p>
+                </div>
+                <div className="profile-field">
+                  <p className="profile-label">Address</p>
+                  <p className="profile-value">{userProfile?.address || "—"}</p>
+                </div>
+                <div className="profile-field">
+                  <p className="profile-label">Phone number</p>
+                  <p className="profile-value">{userProfile?.phone || "—"}</p>
+                </div>
+                <div className="profile-field">
+                  <p className="profile-label">Member since</p>
+                  <p className="profile-value">
+                    {formatTimestamp(userProfile?.createdAt)}
+                  </p>
+                </div>
+                <div className="profile-actions">
+                  <button
+                    type="button"
+                    className="primary-button full-width"
+                    onClick={handleStartEditProfile}
+                  >
+                    Edit Profile
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button full-width"
+                    onClick={() => {
+                      setShowProfile(false);
+                      handleSignOut();
+                    }}
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
