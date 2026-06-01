@@ -16,7 +16,7 @@ import {
   push,
   serverTimestamp,
 } from "firebase/database";
-import { sendOrderEmail, submitToGoogleForms, sendAdminNotification } from "./services/notifications";
+import { sendOrderEmail, submitToGoogleForms, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet } from "./services/notifications";
 import "./App.css";
 
 const GIFTOWebsite = () => {
@@ -703,6 +703,10 @@ const GIFTOWebsite = () => {
         });
       }
     }
+
+    sendCancellationEmail(order, user.email);
+    sendCancellationAdminNotification(order, user.email);
+    markOrderAsCancelledInSheet(order.id);
 
     showToast("Your order has been canceled.", "success");
   };

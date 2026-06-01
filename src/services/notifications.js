@@ -2,6 +2,7 @@ const BREVO_API_KEY = import.meta.env.VITE_BREVO_API_KEY;
 const BREVO_SENDER_EMAIL = import.meta.env.VITE_BREVO_SENDER_EMAIL;
 const BREVO_SENDER_NAME = import.meta.env.VITE_BREVO_SENDER_NAME;
 const GOOGLE_FORM_ID = import.meta.env.VITE_GOOGLE_FORM_ID;
+const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
 
 export const sendOrderEmail = async (orderData, customerEmail) => {
   if (!BREVO_API_KEY) {
@@ -91,6 +92,7 @@ export const submitToGoogleForms = async (orderData, customerEmail) => {
     formData.append("entry.1824052770", String(orderData.paymentMethod));
     formData.append("entry.1691925111", orderData.giftWrap ? "Yes" : "No");
     formData.append("entry.1907235798", String(orderData.cardMessage || "None"));
+    formData.append("entry.2120889714", String(orderData.status || "pending"));
 
     const formUrl = `https://docs.google.com/forms/u/0/d/${GOOGLE_FORM_ID}/formResponse`;
 
@@ -193,5 +195,162 @@ export const sendAdminNotification = async (orderData, customerEmail) => {
   } catch (error) {
     console.error("Error sending admin notification:", error);
     return false;
+  }
+};
+
+export const sendCancellationEmail = async (orderData, customerEmail) => {
+  if (!BREVO_API_KEY) {
+    console.warn("Brevo API key not configured");
+    return false;
+  }
+
+  try {
+    const itemsList = orderData.items
+      .map((item) => `<li>${item.name} (x${item.quantity}) - ${item.price * item.quantity} LE</li>`)
+      .join("");
+
+    const htmlContent = `
+      <h2>Order Cancelled - #${orderData.id}</h2>
+      <p>Hello ${orderData.name},</p>
+      <p>Your order has been successfully cancelled. Here are the details:</p>
+
+      <h3>Cancelled Items</h3>
+      <ul>
+        ${itemsList}
+      </ul>
+
+      <h3>Refund Summary</h3>
+      <p><strong>Subtotal:</strong> ${orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0)} LE</p>
+      ${orderData.giftWrap ? `<p><strong>Gift Wrapping:</strong> 50 LE (refunded)</p>` : ""}
+      ${orderData.cardMessage ? `<p><strong>Gift Message:</strong> 10 LE (refunded)</p>` : ""}
+      <p><strong>Total Refund:</strong> ${orderData.total} LE</p>
+
+      <p>If you paid in advance, the refund will be processed within 5-7 business days.</p>
+      <p>If you have any questions, please contact us at <a href="mailto:giftoo.storee@gmail.com">giftoo.storee@gmail.com</a></p>
+      <p>Thank you for understanding.<br>Best regards,<br>GIFTO Team</p>
+    `;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL,
+        },
+        to: [
+          {
+            email: customerEmail,
+            name: orderData.name,
+          },
+        ],
+        subject: `Order Cancelled - #${orderData.id}`,
+        htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Brevo API error:", await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error sending cancellation email:", error);
+    return false;
+  }
+};
+
+export const sendCancellationAdminNotification = async (orderData, customerEmail) => {
+  if (!BREVO_API_KEY) {
+    console.warn("Brevo API key not configured");
+    return false;
+  }
+
+  try {
+    const itemsList = orderData.items
+      .map((item) => `<li>${item.name} (x${item.quantity})</li>`)
+      .join("");
+
+    const htmlContent = `
+      <h2>Order Cancelled 🚫</h2>
+      <p><strong>Order ID:</strong> #${orderData.id}</p>
+
+      <h3>Customer Details</h3>
+      <p><strong>Name:</strong> ${orderData.name}</p>
+      <p><strong>Email:</strong> <a href="mailto:${customerEmail}">${customerEmail}</a></p>
+      <p><strong>Phone:</strong> <a href="tel:${orderData.phone}">${orderData.phone}</a></p>
+
+      <h3>Cancelled Items</h3>
+      <ul>
+        ${itemsList}
+      </ul>
+
+      <p><strong>Total Refunded:</strong> ${orderData.total} LE</p>
+      <p><strong>Payment Method:</strong> ${orderData.paymentMethod.toUpperCase()}</p>
+      <p>Inventory has been restored for all items in this order.</p>
+    `;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL,
+        },
+        to: [
+          {
+            email: BREVO_SENDER_EMAIL,
+          },
+        ],
+        subject: `Order Cancelled - #${orderData.id}`,
+        htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Admin cancellation notification error:", await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error sending admin cancellation notification:", error);
+    return false;
+  }
+};
+
+export const markOrderAsCancelledInSheet = async (orderId) => {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("YOUR_DEPLOYMENT")) {
+    console.warn("Google Apps Script URL not configured - skipping sheet update");
+    return true;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      signal: controller.signal,
+      body: JSON.stringify({
+        orderId: String(orderId),
+        action: "mark",
+      }),
+    });
+
+    clearTimeout(timeoutId);
+    console.log(`Order ${orderId} marked as cancelled in Google Sheet`);
+    return true;
+  } catch (error) {
+    console.warn("Sheet update failed (non-blocking):", error);
+    return true;
   }
 };
