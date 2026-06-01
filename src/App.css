@@ -943,8 +943,7 @@
   }
 }
 
-.orders-section,
-.admin-dashboard {
+.orders-section {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1.5rem 3rem;
@@ -1068,6 +1067,40 @@
 .status-button:hover {
   background: var(--accent-soft);
   border-color: var(--accent);
+}
+
+.order-meta-with-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.edit-delivery-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem;
+  background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(139, 69, 19, 0.08) 100%);
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+  border-radius: 5px;
+  cursor: pointer;
+  transition:
+    all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(var(--accent-rgb), 0.1);
+}
+
+.edit-delivery-btn:hover {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(139, 69, 19, 0.25);
+  border-color: var(--accent);
+}
+
+.edit-delivery-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(var(--accent-rgb), 0.15);
 }
 
 .product-manager-grid {
@@ -1426,9 +1459,171 @@
   .category-bar,
   .product-grid,
   .site-footer,
-  .orders-section,
-  .admin-dashboard {
+  .orders-section {
     padding-left: 1rem;
     padding-right: 1rem;
+  }
+}
+
+.admin-dashboard-view {
+  background: linear-gradient(135deg, #fdf6f0 0%, #f4e5d9 45%, #e7d2c4 100%);
+}
+
+.admin-header {
+  background: rgba(139, 69, 19, 0.05);
+  border-bottom: 2px solid var(--accent);
+}
+
+.admin-header .brand-title {
+  font-size: 1.5rem;
+  color: var(--accent);
+}
+
+.admin-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.admin-section {
+  margin-bottom: 2rem;
+}
+
+.admin-section .section-title-row {
+  margin-bottom: 1.5rem;
+}
+
+.admin-section .section-title-row {
+  display: flex;
+  justify-content: center;
+}
+
+.admin-section .section-title-row.centered {
+  text-align: center;
+}
+
+.admin-section .section-title-row h2 {
+  color: var(--accent);
+  font-size: 2rem;
+  margin: 0.5rem 0 0;
+}
+
+.admin-section .section-title-row .eyebrow {
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.dashboard-card {
+  background: var(--surface);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  text-align: center;
+  border-left: 4px solid var(--accent);
+}
+
+.dashboard-card.highlight {
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.1) 0%, rgba(139, 69, 19, 0.05) 100%);
+  border-left-color: var(--accent-strong);
+}
+
+.metric-label {
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0.5rem 0;
+  min-height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-card:last-child .metric-value {
+  font-size: 1.5rem;
+}
+
+.metric-description {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+}
+
+.insights-card {
+  background: var(--surface);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  margin-top: 1rem;
+}
+
+.insights-card h3 {
+  color: var(--accent);
+  margin: 0 0 1.5rem;
+  font-size: 1.4rem;
+}
+
+.insights-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.insights-list li {
+  padding: 1rem;
+  border-radius: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.insight-warning {
+  background: rgba(139, 69, 19, 0.15);
+  color: var(--accent-strong);
+  border-left: 4px solid var(--accent);
+}
+
+.insight-info {
+  background: rgba(139, 69, 19, 0.08);
+  color: var(--accent);
+  border-left: 4px solid var(--accent-soft);
+}
+
+.insight-success {
+  background: rgba(22, 163, 74, 0.15);
+  color: #166534;
+  border-left: 4px solid var(--success);
+}
+
+.admin-inventory-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .admin-inventory-grid {
+    grid-template-columns: 1fr;
   }
 }

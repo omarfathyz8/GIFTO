@@ -17,6 +17,7 @@ import {
   serverTimestamp,
 } from "firebase/database";
 import { sendOrderEmail, submitToGoogleForms, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet } from "./services/notifications";
+import AdminDashboard from "./components/AdminDashboard";
 import "./App.css";
 
 const GIFTOWebsite = () => {
@@ -349,6 +350,14 @@ const GIFTOWebsite = () => {
     } catch (error) {
       showToast(error.message, "error");
     }
+  };
+
+  const calculateDeliveryTime = (createdAt) => {
+    const date = new Date(createdAt);
+    const daysToAdd = date.getHours() < 10 ? 3 : 4;
+    date.setDate(date.getDate() + daysToAdd);
+    date.setHours(10, 0, 0, 0);
+    return date.getTime();
   };
 
   const handleCheckoutClick = () => {
@@ -799,6 +808,9 @@ const GIFTOWebsite = () => {
     }
 
     const orderRef = push(dbRef(db, "orders"));
+    const currentTime = Date.now();
+    const deliveryTime = calculateDeliveryTime(currentTime);
+
     const orderData = {
       id: orderRef.key,
       userId: user.uid,
@@ -813,6 +825,7 @@ const GIFTOWebsite = () => {
       status: "pending",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      deliveryTime,
       notificationLog: [
         {
           type: "order",
@@ -860,6 +873,10 @@ const GIFTOWebsite = () => {
   const selectedCategory = categories.includes(searchQuery)
     ? searchQuery
     : "All";
+
+  if (isAdmin) {
+    return <AdminDashboard user={user} handleSignOut={handleSignOut} />;
+  }
 
   return (
     <div className="app-shell">
@@ -1161,15 +1178,11 @@ const GIFTOWebsite = () => {
                       <p className="order-meta">
                         Placed at {formatTimestamp(order.createdAt)}
                       </p>
-                      <p className="order-meta">
-                        Delivery at {formatTimestamp((() => {
-                          const date = new Date(order.createdAt);
-                          const daysToAdd = date.getHours() < 10 ? 3 : 4;
-                          date.setDate(date.getDate() + daysToAdd);
-                          date.setHours(10, 0, 0, 0);
-                          return date.getTime();
-                        })())}
-                      </p>
+                      {order.status !== "cancelled" && (
+                        <p className="order-meta">
+                          Delivery at {formatTimestamp(order.deliveryTime || calculateDeliveryTime(order.createdAt))}
+                        </p>
+                      )}
                     </div>
                     <span
                       className={`order-status status-${order.status || "pending"}`}
@@ -1209,258 +1222,6 @@ const GIFTOWebsite = () => {
           </section>
         )}
 
-        {isAdmin && (
-          <section className="admin-dashboard">
-            <div className="section-title-row">
-              <div>
-                <p className="eyebrow">Admin access</p>
-                <h2>Admin Dashboard</h2>
-              </div>
-            </div>
-
-            <div className="admin-grid">
-              <div className="admin-card">
-                <h3>Add New Product</h3>
-                <form className="admin-form" onSubmit={handleAddProduct}>
-                  <label className="admin-label">
-                    Product name
-                    <input
-                      value={newProduct.name}
-                      onChange={(e) =>
-                        setNewProduct({ ...newProduct, name: e.target.value })
-                      }
-                      required
-                      className="admin-input"
-                    />
-                  </label>
-                  <label className="admin-label">
-                    Category
-                    <input
-                      value={newProduct.category}
-                      onChange={(e) =>
-                        setNewProduct({
-                          ...newProduct,
-                          category: e.target.value,
-                        })
-                      }
-                      required
-                      className="admin-input"
-                    />
-                  </label>
-                  <label className="admin-label">
-                    Price (LE)
-                    <input
-                      type="number"
-                      value={newProduct.price}
-                      onChange={(e) =>
-                        setNewProduct({ ...newProduct, price: e.target.value })
-                      }
-                      required
-                      className="admin-input"
-                    />
-                  </label>
-                  <label className="admin-label">
-                    Stock quantity
-                    <input
-                      type="number"
-                      min="0"
-                      value={newProduct.inventory}
-                      onChange={(e) =>
-                        setNewProduct({
-                          ...newProduct,
-                          inventory: e.target.value,
-                        })
-                      }
-                      required
-                      className="admin-input"
-                    />
-                  </label>
-                  <label className="admin-label">
-                    Product Images (Multiple)
-                    <div className="image-upload-container">
-                      {newProduct.images && newProduct.images.length > 0 && (
-                        <div className="image-preview-list">
-                          {newProduct.images.map((img, idx) => (
-                            <div key={idx} className="image-preview-item">
-                              <img src={img} alt={`Preview ${idx + 1}`} />
-                              <button
-                                type="button"
-                                className="remove-image-btn"
-                                onClick={() =>
-                                  setNewProduct((prev) => ({
-                                    ...prev,
-                                    images: prev.images.filter((_, i) => i !== idx),
-                                  }))
-                                }
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload(e, false)}
-                        className="admin-input"
-                        disabled={uploadingImage}
-                        multiple
-                      />
-                      {uploadingImage && <span className="uploading-text">Uploading...</span>}
-                      {newProduct.images && newProduct.images.length > 0 && (
-                        <p className="image-count">
-                          {newProduct.images.length} image{newProduct.images.length !== 1 ? "s" : ""} added
-                        </p>
-                      )}
-                    </div>
-                  </label>
-                  <label className="admin-label">
-                    Emoji (if no image)
-                    <input
-                      value={newProduct.emoji}
-                      onChange={(e) =>
-                        setNewProduct({ ...newProduct, emoji: e.target.value })
-                      }
-                      className="admin-input"
-                    />
-                  </label>
-                  <label className="admin-label">
-                    Description
-                    <textarea
-                      value={newProduct.description}
-                      onChange={(e) =>
-                        setNewProduct({
-                          ...newProduct,
-                          description: e.target.value,
-                        })
-                      }
-                      className="admin-textarea"
-                    />
-                  </label>
-                  <button type="submit" className="primary-button full-width">
-                    Add product
-                  </button>
-                </form>
-              </div>
-
-              <div className="admin-card">
-                <h3>Product Catalog</h3>
-                <div className="product-manager-grid">
-                  {products.map((product) => (
-                    <div key={product.id} className="product-manager-card">
-                      <div>
-                        <p className="product-title">{product.name}</p>
-                        {/* <p className="product-meta">{product.category}</p> */}
-                        <p
-                          className={`product-meta inventory-status ${
-                            product.inventory === 0
-                              ? "inventory-out"
-                              : product.inventory <= 5
-                                ? "inventory-low"
-                                : "inventory-good"
-                          }`}
-                        >
-                          Stock: {product.inventory}
-                        </p>
-                      </div>
-                      <div className="product-manager-actions">
-                        <button
-                          type="button"
-                          className="secondary-button small"
-                          onClick={() => handleStartEditProduct(product)}
-                          disabled={!product.dbKey}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="secondary-button small"
-                          onClick={() => handleDeleteProduct(product.dbKey)}
-                          disabled={!product.dbKey}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="admin-card">
-              <h3>Manage Customer Orders</h3>
-              {allOrders.length === 0 ? (
-                <p className="loading-state">No orders yet.</p>
-              ) : (
-                (() => {
-                  const statusOrder = {
-                    pending: 1,
-                    processing: 2,
-                    shipped: 3,
-                    delivered: 4,
-                    cancelled: 5,
-                  };
-                  const sortedOrders = [...allOrders].sort(
-                    (a, b) =>
-                      (statusOrder[a.status || "pending"] || 6) -
-                      (statusOrder[b.status || "pending"] || 6),
-                  );
-                  return sortedOrders.map((order) => (
-                  <article key={order.dbKey} className="order-manager-card">
-                    <div className="order-manager-top">
-                      <div>
-                        <p className="order-label">
-                          #{order.id} - - {order.total} LE
-                        </p>
-                        <p className="order-meta">
-                          {order.name} | {order.phone} | {order.address}
-                        </p>
-                      </div>
-                      <span
-                        className={`order-status status-${order.status || "pending"}`}
-                      >
-                        {order.status || "pending"}
-                      </span>
-                    </div>
-                    {order.giftWrap && (
-                      <p className="order-summary-text">Gift wrap: Yes</p>
-                    )}
-                    {order.cardMessage ? (
-                      <p className="order-summary-text">
-                        Message card: {order.cardMessage}
-                      </p>
-                    ) : null}
-                    <p className="order-summary-text">
-                      {order.items.length > 0
-                        ? order.items.map((item) => item.name).join(", ")
-                        : "No items"}
-                    </p>
-                    {order.status !== "cancelled" && (
-                      <div className="status-actions">
-                        {["pending", "processing", "shipped", "delivered"].map(
-                          (status) => (
-                            <button
-                              type="button"
-                              key={`${order.dbKey}-${status}`}
-                              className={`status-button ${order.status === status ? "active" : ""}`}
-                              onClick={() =>
-                                updateOrderStatus(order.dbKey, status)
-                              }
-                            >
-                              {status}
-                            </button>
-                          ),
-                        )}
-                      </div>
-                    )}
-                  </article>
-                  ));
-                })()
-              )}
-            </div>
-          </section>
-        )}
       </main>
 
       {authOpen && (
