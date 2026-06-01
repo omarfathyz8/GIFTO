@@ -869,7 +869,7 @@ const GIFTOWebsite = () => {
             <img src={logoImage} alt="GIFTO Logo" className="brand-logo" />
             <div>
               <p className="brand-title">GIFTO</p>
-              <p className="brand-subtitle">Make it special</p>
+              <p className="brand-subtitle">Make it special ✨</p>
             </div>
           </div>
 
@@ -1162,9 +1162,9 @@ const GIFTOWebsite = () => {
                         Placed at {formatTimestamp(order.createdAt)}
                       </p>
                       <p className="order-meta">
-                        Estimated delivery at {formatTimestamp((() => {
+                        Delivery at {formatTimestamp((() => {
                           const date = new Date(order.createdAt);
-                          const daysToAdd = date.getHours() < 12 ? 4 : 5;
+                          const daysToAdd = date.getHours() < 10 ? 3 : 4;
                           date.setDate(date.getDate() + daysToAdd);
                           date.setHours(10, 0, 0, 0);
                           return date.getTime();
