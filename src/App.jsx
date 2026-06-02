@@ -87,7 +87,7 @@ const GIFTOWebsite = () => {
     "Sets",
   ];
 
-  const isAdmin = user?.email === "admin@gifto.com" || user?.email === "giftoo.storee@gmail.com";
+  const isAdmin = user?.email === "giftoo.storee@gmail.com";
   const isGuest = !user;
   const canUseCart = Boolean(user);
   const wishlistItems = products.filter((product) =>
@@ -957,13 +957,30 @@ const GIFTOWebsite = () => {
     showToast("Your order has been placed successfully.", "success");
   };
 
-  const filteredProducts = products.filter((product) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      product.name.toLowerCase().includes(query) ||
-      product.category.toLowerCase().includes(query)
-    );
+  const itemCounts = {};
+  allOrders.forEach(order => {
+    if (order.items && Array.isArray(order.items)) {
+      order.items.forEach(item => {
+        itemCounts[item.name] = (itemCounts[item.name] || 0) + item.quantity;
+      });
+    }
   });
+
+  const bestSellerName = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+  const filteredProducts = products
+    .filter((product) => {
+      const query = searchQuery.toLowerCase();
+      return (
+        product.name.toLowerCase().includes(query) ||
+        product.category.toLowerCase().includes(query)
+      );
+    })
+    .sort((a, b) => {
+      if (a.name === bestSellerName) return -1;
+      if (b.name === bestSellerName) return 1;
+      return (b.id || 0) - (a.id || 0);
+    });
 
   const selectedCategory = categories.includes(searchQuery)
     ? searchQuery
@@ -1145,14 +1162,6 @@ const GIFTOWebsite = () => {
             <p className="loading-state">No products available yet.</p>
           ) : (
             (() => {
-              const itemCounts = {};
-              allOrders.forEach(order => {
-                if (order.items && Array.isArray(order.items)) {
-                  order.items.forEach(item => {
-                    itemCounts[item.name] = (itemCounts[item.name] || 0) + item.quantity;
-                  });
-                }
-              });
               const bestSellerName = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
 
               return filteredProducts.map((product) => {
