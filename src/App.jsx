@@ -81,6 +81,7 @@ const GIFTOWebsite = () => {
     "Watches",
     "Perfumes",
     "Medals",
+    "Flowers",
     "Accessories",
     "Decor",
     "Sets",
@@ -1293,7 +1294,7 @@ const GIFTOWebsite = () => {
                       </p>
                       {order.status !== "cancelled" && (
                         <p className="order-meta">
-                          Delivery on {formatTimestamp(order.deliveryTime || calculateDeliveryTime(order.createdAt))}
+                          {order.status === "delivered" ? "Delivered" : "Delivery"} on {formatTimestamp(order.deliveryTime || calculateDeliveryTime(order.createdAt))}
                         </p>
                       )}
                     </div>
@@ -2198,7 +2199,7 @@ const GIFTOWebsite = () => {
           <div className="footer-column">
             <h4>Social Media</h4>
             <p>
-              <a href="https://facebook.com/giftoo.storee" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+              <a href="https://www.facebook.com/profile.php?id=61590764780676" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
                 Facebook
               </a>
             </p>

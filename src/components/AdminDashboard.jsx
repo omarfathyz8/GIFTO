@@ -570,6 +570,27 @@ const AdminDashboard = ({ user, handleSignOut }) => {
               <label className="admin-label">
                 Product Images (Multiple)
                 <div className="image-upload-container">
+                  {editingProduct.images && editingProduct.images.length > 0 && (
+                    <div className="image-preview-list">
+                      {editingProduct.images.map((img, idx) => (
+                        <div key={idx} className="image-preview-item">
+                          <img src={img} alt={`Preview ${idx + 1}`} />
+                          <button
+                            type="button"
+                            className="remove-image-btn"
+                            onClick={() =>
+                              setEditingProduct((prev) => ({
+                                ...prev,
+                                images: prev.images.filter((_, i) => i !== idx),
+                              }))
+                            }
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <input
                     type="file"
                     accept="image/*"

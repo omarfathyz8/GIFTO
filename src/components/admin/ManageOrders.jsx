@@ -28,7 +28,7 @@ const OrderCard = ({ order, showDeliveryEdit = false, onDeliveryEdit = null, onS
         )}
         {order.deliveryTime && !showDeliveryEdit && (
           <p className="order-meta">
-            Delivery on {new Date(order.deliveryTime).toLocaleString()}
+            {order.status === "delivered" ? "Delivered" : "Delivery"} on {new Date(order.deliveryTime).toLocaleString()}
           </p>
         )}
       </div>
@@ -88,7 +88,6 @@ const ManageOrders = ({
       </div>
 
       <div className="admin-inventory-grid">
-        {/* Pending Orders */}
         <div className="admin-card">
           <h3>Pending Orders</h3>
           {allOrders.filter(o => o.status === "pending" || !o.status).length === 0 ? (
@@ -111,7 +110,6 @@ const ManageOrders = ({
           )}
         </div>
 
-        {/* Processing Orders */}
         <div className="admin-card">
           <h3>Processing Orders</h3>
           {allOrders.filter(o => o.status === "processing").length === 0 ? (
@@ -135,20 +133,18 @@ const ManageOrders = ({
         </div>
       </div>
 
-      {/* Shipped, Delivered & Cancelled Orders */}
       <div className="admin-card">
-        <h3>Shipped, Delivered & Cancelled Orders</h3>
-        {allOrders.filter(o => o.status === "shipped" || o.status === "delivered" || o.status === "cancelled").length === 0 ? (
-          <p className="loading-state">No completed orders yet.</p>
+        <h3>Shipped & Delivered Orders</h3>
+        {allOrders.filter(o => o.status === "shipped" || o.status === "delivered").length === 0 ? (
+          <p className="loading-state">No shipped or delivered orders yet.</p>
         ) : (
           (() => {
             const statusOrder = {
               shipped: 1,
               delivered: 2,
-              cancelled: 3,
             };
             return allOrders
-              .filter(o => o.status === "shipped" || o.status === "delivered" || o.status === "cancelled")
+              .filter(o => o.status === "shipped" || o.status === "delivered")
               .sort((a, b) => {
                 const statusDiff = (statusOrder[a.status] || 4) - (statusOrder[b.status] || 4);
                 if (statusDiff !== 0) return statusDiff;
@@ -165,6 +161,27 @@ const ManageOrders = ({
                 />
               ));
           })()
+        )}
+      </div>
+
+      <div className="admin-card">
+        <h3>Cancelled Orders</h3>
+        {allOrders.filter(o => o.status === "cancelled").length === 0 ? (
+          <p className="loading-state">No cancelled orders.</p>
+        ) : (
+          allOrders
+            .filter(o => o.status === "cancelled")
+            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+            .map((order) => (
+              <OrderCard
+                key={order.dbKey}
+                order={order}
+                showDeliveryEdit={false}
+                showStatusActions={false}
+                statuses={[]}
+                onStatusChange={updateOrderStatus}
+              />
+            ))
         )}
       </div>
     </section>

@@ -21,11 +21,13 @@ const ManageRequests = ({ requests, updateRequestStatus }) => {
               fulfilled: 4,
               rejected: 5,
             };
-            const sortedRequests = [...requests].sort(
-              (a, b) =>
+            const sortedRequests = [...requests].sort((a, b) => {
+              const statusDiff =
                 (statusOrder[a.status || "pending"] || 6) -
-                (statusOrder[b.status || "pending"] || 6),
-            );
+                (statusOrder[b.status || "pending"] || 6);
+              if (statusDiff !== 0) return statusDiff;
+              return (a.createdAt || 0) - (b.createdAt || 0);
+            });
             return sortedRequests.map((request) => (
               <article key={request.dbKey} className="order-manager-card">
                 <div className="order-manager-top">

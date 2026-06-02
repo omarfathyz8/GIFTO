@@ -822,6 +822,8 @@
 
 .modal-card {
   width: min(520px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
   background: #fff;
   border-radius: 1.5rem;
   padding: 2rem;
@@ -1355,24 +1357,22 @@
 
 .remove-image-btn {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 28px;
-  height: 28px;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--danger);
   color: #fff;
   border: none;
-  font-size: 1.2rem;
+  font-size: 0.85rem;
+  font-weight: bold;
   cursor: pointer;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s;
-}
-
-.remove-image-btn:hover {
-  opacity: 0.8;
+  line-height: 1;
 }
 
 .image-count {
