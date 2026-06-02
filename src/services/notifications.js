@@ -373,8 +373,8 @@ export const sendRequestConfirmationEmail = async (requestData) => {
 
       <h3>What's Next?</h3>
       <p>Our team will review your request and get back to you.</p>
-      
-      <p>You can track the status of your request anytime using your email address at: <a href="https://giftoo-storee.vercel.app" style="color: #5e2f07;">Track Your Request</a></p>
+
+      <p>You can track the status of your request anytime using your email address at: <a href="https://giftoo-storee.vercel.app" style="color: #8b4513;">Track Your Request</a></p>
 
       <p>If you have any questions, feel free to reach out to us at <a href="mailto:giftoo.storee@gmail.com">giftoo.storee@gmail.com</a></p>
 
@@ -462,6 +462,131 @@ export const sendRequestAdminNotification = async (requestData) => {
     return true;
   } catch (error) {
     console.error("Error sending admin notification:", error);
+    return false;
+  }
+};
+
+export const sendRequestFulfilledEmail = async (requestData) => {
+  if (!BREVO_API_KEY) {
+    console.warn("Brevo API key not configured");
+    return false;
+  }
+
+  try {
+    const htmlContent = `
+      <h2>Great News! 🎉</h2>
+      <h2>Your Request Has Been Fulfilled!</h2>
+      <p>Hi there,</p>
+      <p>We're excited to let you know that the item you requested is now available on our website!</p>
+
+      <h3>Item Details</h3>
+      <p><strong>Item Name:</strong> ${requestData.itemName}</p>
+      ${requestData.category ? `<p><strong>Category:</strong> ${requestData.category}</p>` : ""}
+
+      <h3>What's Next?</h3>
+      <p>You can now browse and purchase this item directly from our website. We've made sure to stock it so you can get your perfect gift!</p>
+
+      <p><strong>To place an order:</strong></p>
+      <ol>
+        <li>Visit our website: <a href="https://giftoo-storee.vercel.app" style="color: #8b4513;">GIFTO Store</a></li>
+        <li>Sign in to your account or create a new one</li>
+        <li>Search for "${requestData.itemName}"</li>
+        <li>Add it to your cart and proceed to checkout</li>
+      </ol>
+
+      <p>If you have any questions or need assistance, feel free to reach out to us at <a href="mailto:giftoo.storee@gmail.com">giftoo.storee@gmail.com</a></p>
+
+      <p>Thank you for your interest and happy shopping!<br>Best regards,<br>GIFTO Team</p>
+    `;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL,
+        },
+        to: [
+          {
+            email: requestData.email,
+          },
+        ],
+        subject: `Request Fulfilled - ${requestData.itemName} is Now Available!`,
+        htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Brevo API error:", await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error sending request fulfilled email:", error);
+    return false;
+  }
+};
+
+export const sendRequestRejectedEmail = async (requestData) => {
+  if (!BREVO_API_KEY) {
+    console.warn("Brevo API key not configured");
+    return false;
+  }
+
+  try {
+    const htmlContent = `
+      <h2>Request Update 📋</h2>
+      <p>Hi there,</p>
+      <p>Thank you for submitting a request for "<strong>${requestData.itemName}</strong>". We appreciate your interest in this item.</p>
+
+      <p>Unfortunately, we're unable to fulfill this request at this time. This could be due to various reasons such as availability constraints, supplier limitations, or business decisions.</p>
+
+      <h3>What You Can Do</h3>
+      <ul>
+        <li>Browse our current catalog for similar items you might like</li>
+        <li>Feel free to submit another requests for different items in the future</li>
+        <li>Contact us at <a href="mailto:giftoo.storee@gmail.com">giftoo.storee@gmail.com</a> if you have questions about this decision</li>
+      </ul>
+
+      <p>We value your feedback and hope to serve you better in the future. Thank you for choosing GIFTO!</p>
+
+      <p>Best regards,<br>GIFTO Team</p>
+    `;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL,
+        },
+        to: [
+          {
+            email: requestData.email,
+          },
+        ],
+        subject: `Request Update - ${requestData.itemName}`,
+        htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Brevo API error:", await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error sending request rejected email:", error);
     return false;
   }
 };

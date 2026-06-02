@@ -10,7 +10,7 @@ import {
   push,
   serverTimestamp,
 } from "firebase/database";
-import { sendAdminNotification } from "../services/notifications";
+import { sendAdminNotification, sendRequestFulfilledEmail, sendRequestRejectedEmail } from "../services/notifications";
 import "../App.css";
 
 const AdminDashboard = ({ user, handleSignOut }) => {
@@ -161,6 +161,13 @@ const AdminDashboard = ({ user, handleSignOut }) => {
       status,
       updatedAt: serverTimestamp(),
     });
+
+    if (status === "fulfilled") {
+      sendRequestFulfilledEmail(request);
+    } else if (status === "rejected") {
+      sendRequestRejectedEmail(request);
+    }
+
     showToast(`Request status updated to ${status}.`, "success");
   };
 

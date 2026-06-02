@@ -2030,9 +2030,7 @@ const GIFTOWebsite = () => {
 
             {trackedRequests.length > 0 && (
               <>
-                <p className="eyebrow" style={{ marginTop: "0px" }}>
-                  Found {trackedRequests.length} request{trackedRequests.length === 1 ? "" : "s"}
-                </p>
+              <br />
                 <div className="requests-list">
                   {trackedRequests.map((request, index) => (
                     <article key={request.dbKey} className="request-card">
