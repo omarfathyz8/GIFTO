@@ -1686,3 +1686,43 @@
     grid-template-columns: 1fr;
   }
 }
+
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.request-card {
+  background: var(--surface-soft);
+  border-radius: 1rem;
+  padding: 1.2rem;
+  border: 1px solid var(--border);
+}
+
+.request-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.request-label {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.request-item-name {
+  margin: 0.35rem 0;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.request-description {
+  margin: 0.35rem 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}

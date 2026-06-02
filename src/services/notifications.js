@@ -4,75 +4,6 @@ const BREVO_SENDER_NAME = import.meta.env.VITE_BREVO_SENDER_NAME;
 const GOOGLE_FORM_ID = import.meta.env.VITE_GOOGLE_FORM_ID;
 const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
 
-export const sendOrderEmail = async (orderData, customerEmail) => {
-  if (!BREVO_API_KEY) {
-    console.warn("Brevo API key not configured");
-    return false;
-  }
-
-  try {
-    const itemsList = orderData.items
-      .map((item) => `<li>${item.name} (x${item.quantity}) - ${item.price * item.quantity} LE</li>`)
-      .join("");
-
-    const htmlContent = `
-      <h2>Order Confirmation - #${orderData.id}</h2>
-      <p>Hello ${orderData.name},</p>
-      <p>Thank you for your order! Here are your order details:</p>
-
-      <h3>Order Items</h3>
-      <ul>
-        ${itemsList}
-      </ul>
-
-      <h3>Order Summary</h3>
-      <p><strong>Subtotal:</strong> ${orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0)} LE</p>
-      ${orderData.giftWrap ? `<p><strong>Gift Wrapping:</strong> 50 LE</p>` : ""}
-      ${orderData.cardMessage ? `<p><strong>Gift Message:</strong> 10 LE (${orderData.cardMessage})</p>` : ""}
-      <p><strong>Total:</strong> ${orderData.total} LE</p>
-
-      <p><strong>Payment Method:</strong> ${orderData.paymentMethod.toUpperCase()}</p>
-      <p><strong>Status:</strong> ${orderData.status}</p>
-
-      <p>You can track your order status anytime at: <a href="https://giftoo-storee.vercel.app" style="color: #0066cc;">https://giftoo-storee.vercel.app</a></p>
-      <p>We'll notify you when your order is shipped!</p>
-      <p>Best regards,<br>GIFTO Team</p>
-    `;
-
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "api-key": BREVO_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        sender: {
-          name: BREVO_SENDER_NAME,
-          email: BREVO_SENDER_EMAIL,
-        },
-        to: [
-          {
-            email: customerEmail,
-            name: orderData.name,
-          },
-        ],
-        subject: `Order Confirmation - #${orderData.id}`,
-        htmlContent,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error("Brevo API error:", await response.text());
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Error sending order email:", error);
-    return false;
-  }
-};
-
 export const submitToGoogleForms = async (orderData, customerEmail) => {
   if (!GOOGLE_FORM_ID) {
     console.warn("Google Form ID not configured");
@@ -129,6 +60,75 @@ export const submitToGoogleForms = async (orderData, customerEmail) => {
     return true;
   } catch (error) {
     console.error("Error submitting to Google Forms:", error);
+    return false;
+  }
+};
+
+export const sendOrderEmail = async (orderData, customerEmail) => {
+  if (!BREVO_API_KEY) {
+    console.warn("Brevo API key not configured");
+    return false;
+  }
+
+  try {
+    const itemsList = orderData.items
+      .map((item) => `<li>${item.name} (x${item.quantity}) - ${item.price * item.quantity} LE</li>`)
+      .join("");
+
+    const htmlContent = `
+      <h2>Order Confirmation 🎉 - #${orderData.id}</h2>
+      <p>Hello ${orderData.name},</p>
+      <p>Thank you for your order! Here are your order details:</p>
+
+      <h3>Order Items</h3>
+      <ul>
+        ${itemsList}
+      </ul>
+
+      <h3>Order Summary</h3>
+      <p><strong>Subtotal:</strong> ${orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0)} LE</p>
+      ${orderData.giftWrap ? `<p><strong>Gift Wrapping:</strong> 50 LE</p>` : ""}
+      ${orderData.cardMessage ? `<p><strong>Gift Message:</strong> 10 LE (${orderData.cardMessage})</p>` : ""}
+      <p><strong>Total:</strong> ${orderData.total} LE</p>
+
+      <p><strong>Payment Method:</strong> ${orderData.paymentMethod.toUpperCase()}</p>
+      <p><strong>Status:</strong> ${orderData.status}</p>
+
+      <p>You can track your order status anytime at: <a href="https://giftoo-storee.vercel.app" style="color: #0066cc;">https://giftoo-storee.vercel.app</a></p>
+      <p>We'll notify you when your order is shipped!</p>
+      <p>Best regards,<br>GIFTO Team</p>
+    `;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL,
+        },
+        to: [
+          {
+            email: customerEmail,
+            name: orderData.name,
+          },
+        ],
+        subject: `Order Confirmation - #${orderData.id}`,
+        htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Brevo API error:", await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error sending order email:", error);
     return false;
   }
 };
@@ -210,7 +210,7 @@ export const sendCancellationEmail = async (orderData, customerEmail) => {
       .join("");
 
     const htmlContent = `
-      <h2>Order Cancelled - #${orderData.id}</h2>
+      <h2>Order Cancelled 🚫 - #${orderData.id}</h2>
       <p>Hello ${orderData.name},</p>
       <p>Your order has been successfully cancelled. Here are the details:</p>
 
@@ -352,5 +352,116 @@ export const markOrderAsCancelledInSheet = async (orderId) => {
   } catch (error) {
     console.warn("Sheet update failed (non-blocking):", error);
     return true;
+  }
+};
+
+export const sendRequestConfirmationEmail = async (requestData) => {
+  if (!BREVO_API_KEY) {
+    console.warn("Brevo API key not configured");
+    return false;
+  }
+
+  try {
+    const htmlContent = `
+      <h2>Request Received! ✨</h2>
+      <p>Thank you for submitting a specific item request!</p>
+
+      <h3>Your Request Details</h3>
+      <p><strong>Item Name:</strong> ${requestData.itemName}</p>
+      ${requestData.category ? `<p><strong>Category:</strong> ${requestData.category}</p>` : ""}
+      ${requestData.description ? `<p><strong>Description:</strong> ${requestData.description}</p>` : ""}
+
+      <h3>What's Next?</h3>
+      <p>Our team will review your request and get back to you.</p>
+      
+      <p>You can track the status of your request anytime using your email address at: <a href="https://giftoo-storee.vercel.app" style="color: #5e2f07;">Track Your Request</a></p>
+
+      <p>If you have any questions, feel free to reach out to us at <a href="mailto:giftoo.storee@gmail.com">giftoo.storee@gmail.com</a></p>
+
+      <p>Thank you for choosing GIFTO!<br>Best regards,<br>GIFTO Team</p>
+    `;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL,
+        },
+        to: [
+          {
+            email: requestData.email,
+          },
+        ],
+        subject: "Request Received - GIFTO",
+        htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Brevo API error:", await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error sending request confirmation email:", error);
+    return false;
+  }
+};
+
+export const sendRequestAdminNotification = async (requestData) => {
+  if (!BREVO_API_KEY) {
+    console.warn("Brevo API key not configured");
+    return false;
+  }
+
+  try {
+    const htmlContent = `
+      <h2>New Request Received! 📋</h2>
+
+      <h3>Request Details</h3>
+      <p><strong>Item Name:</strong> ${requestData.itemName}</p>
+      <p><strong>Category:</strong> ${requestData.category || "Not specified"}</p>
+      <p><strong>Customer Email:</strong> <a href="mailto:${requestData.email}">${requestData.email}</a></p>
+      ${requestData.description ? `<p><strong>Description:</strong> ${requestData.description}</p>` : ""}
+      <p><strong>Current Status:</strong> ${requestData.status || "pending"}</p>
+      <p>You can update the status of this request in the admin dashboard.</p>
+    `;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL,
+        },
+        to: [
+          {
+            email: BREVO_SENDER_EMAIL,
+          },
+        ],
+        subject: `New Request - ${requestData.itemName}`,
+        htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Admin notification error:", await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error sending admin notification:", error);
+    return false;
   }
 };

@@ -16,7 +16,7 @@ import {
   push,
   serverTimestamp,
 } from "firebase/database";
-import { sendOrderEmail, submitToGoogleForms, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet } from "./services/notifications";
+import { sendOrderEmail, submitToGoogleForms, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet, sendRequestConfirmationEmail, sendRequestAdminNotification } from "./services/notifications";
 import AdminDashboard from "./components/AdminDashboard";
 import "./App.css";
 
@@ -69,6 +69,11 @@ const GIFTOWebsite = () => {
     description: "",
     email: "",
   });
+  const [showTrackRequest, setShowTrackRequest] = useState(false);
+  const [trackingEmail, setTrackingEmail] = useState("");
+  const [trackedRequests, setTrackedRequests] = useState([]);
+  const [trackingSearched, setTrackingSearched] = useState(false);
+  const [searchedEmail, setSearchedEmail] = useState("");
 
   const categories = [
     "All",
@@ -825,6 +830,9 @@ const GIFTOWebsite = () => {
 
       await set(requestRef, requestData);
 
+      sendRequestConfirmationEmail(requestData);
+      sendRequestAdminNotification(requestData);
+
       setRequestForm({
         itemName: "",
         category: "",
@@ -837,6 +845,48 @@ const GIFTOWebsite = () => {
       showToast("Failed to submit request. Please try again.", "error");
     }
   };
+
+  const handleTrackRequest = (event) => {
+    event.preventDefault();
+    setToast(null);
+
+    if (!trackingEmail) {
+      showToast("Please enter your email to track requests.", "error");
+      return;
+    }
+
+    setSearchedEmail(trackingEmail);
+    setTrackingSearched(true);
+  };
+
+  useEffect(() => {
+    const requestsRef = dbRef(db, "requests");
+    const unsubscribe = onValue(
+      requestsRef,
+      (snapshot) => {
+        const value = snapshot.val() || {};
+        const loadedRequests = Object.entries(value)
+          .map(([key, request]) => ({
+            dbKey: key,
+            id: request.id ?? key,
+            ...request,
+          }))
+          .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+        if (trackingSearched && searchedEmail) {
+          const matching = loadedRequests.filter(
+            (request) => request.email?.toLowerCase() === searchedEmail.toLowerCase()
+          );
+          setTrackedRequests(matching);
+        }
+      },
+      (error) => {
+        console.error("Firebase requests error:", error);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [trackingSearched, searchedEmail]);
 
   const createOrder = async () => {
     if (!user) {
@@ -1056,6 +1106,18 @@ const GIFTOWebsite = () => {
                 onClick={() => setShowRequestForm(true)}
               >
                 Specific Request
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  setShowTrackRequest(true);
+                  setTrackingEmail("");
+                  setTrackedRequests([]);
+                  setTrackingSearched(false);
+                }}
+              >
+                Track Requests
               </button>
             </div>
           </div>
@@ -1919,6 +1981,86 @@ const GIFTOWebsite = () => {
                 Submit Request
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showTrackRequest && (
+        <div className="overlay" role="dialog" aria-modal="true">
+          <div className="modal-card">
+            <button
+              type="button"
+              className="modal-close"
+              onClick={() => {
+                setShowTrackRequest(false);
+                setTrackingEmail("");
+                setTrackedRequests([]);
+                setTrackingSearched(false);
+                setSearchedEmail("");
+              }}
+            >
+              <X size={24} />
+            </button>
+            <h2 className="modal-title">Track Your Request</h2>
+
+            {trackedRequests.length === 0 && (
+              <>
+                <p className="modal-subtitle">Enter your email to check the status of your requests</p>
+                <form className="auth-form" onSubmit={handleTrackRequest}>
+                  <label className="auth-label">
+                    Email
+                    <input
+                      type="email"
+                      value={trackingEmail}
+                      onChange={(e) => setTrackingEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      required
+                    />
+                  </label>
+                  <button type="submit" className="primary-button full-width">
+                    Search Requests
+                  </button>
+                </form>
+
+                {trackingSearched && (
+                  <p className="empty-state">No requests found for this email.</p>
+                )}
+              </>
+            )}
+
+            {trackedRequests.length > 0 && (
+              <>
+                <p className="eyebrow" style={{ marginTop: "0px" }}>
+                  Found {trackedRequests.length} request{trackedRequests.length === 1 ? "" : "s"}
+                </p>
+                <div className="requests-list">
+                  {trackedRequests.map((request, index) => (
+                    <article key={request.dbKey} className="request-card">
+                      <div className="request-card-header">
+                        <div>
+                          <p className="request-label">Request {index + 1}</p>
+                          <p className="request-meta">
+                            Submitted {formatTimestamp(request.createdAt)}
+                          </p>
+                        </div>
+                        <span
+                          className={`order-status status-${request.status || "pending"}`}
+                        >
+                          {request.status || "pending"}
+                        </span>
+                      </div>
+                      <p className="request-item-name">{request.itemName}</p>
+                      {request.category && (
+                        <p className="request-meta">Category: {request.category}</p>
+                      )}
+                      {request.description && (
+                        <p className="request-description">{request.description}</p>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
