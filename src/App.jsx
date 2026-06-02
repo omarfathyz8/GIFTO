@@ -1289,7 +1289,7 @@ const GIFTOWebsite = () => {
                     <div>
                       <p className="order-label">Order {index + 1}</p>
                       <p className="order-meta">
-                        Placed at {formatTimestamp(order.createdAt)}
+                        Placed on {formatTimestamp(order.createdAt)}
                       </p>
                       {order.status !== "cancelled" && (
                         <p className="order-meta">
