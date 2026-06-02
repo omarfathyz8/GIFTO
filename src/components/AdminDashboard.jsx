@@ -16,6 +16,7 @@ import "../App.css";
 const AdminDashboard = ({ user, handleSignOut }) => {
   const [products, setProducts] = useState([]);
   const [allOrders, setAllOrders] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [users, setUsers] = useState([]);
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -89,6 +90,30 @@ const AdminDashboard = ({ user, handleSignOut }) => {
   }, []);
 
   useEffect(() => {
+    const requestsRef = dbRef(db, "requests");
+    const unsubscribe = onValue(
+      requestsRef,
+      (snapshot) => {
+        const value = snapshot.val() || {};
+        const loadedRequests = Object.entries(value)
+          .map(([key, request]) => ({
+            dbKey: key,
+            id: request.id ?? key,
+            ...request,
+          }))
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+        setRequests(loadedRequests);
+      },
+      (error) => {
+        console.error("Firebase requests error:", error);
+      },
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     const usersRef = dbRef(db, "users");
     const unsubscribe = onValue(
       usersRef,
@@ -124,6 +149,19 @@ const AdminDashboard = ({ user, handleSignOut }) => {
   const showToast = (message, type = "success") => {
     if (!message) return;
     setToast({ message, type });
+  };
+
+  const updateRequestStatus = async (requestKey, status) => {
+    const request = requests.find((item) => item.dbKey === requestKey);
+    if (!request) {
+      return;
+    }
+
+    await update(dbRef(db, `requests/${requestKey}`), {
+      status,
+      updatedAt: serverTimestamp(),
+    });
+    showToast(`Request status updated to ${status}.`, "success");
   };
 
   const handleImageUpload = (event, isEditing = false) => {
@@ -418,39 +456,27 @@ const AdminDashboard = ({ user, handleSignOut }) => {
             </div>
 
             <div className="dashboard-card highlight">
-              <div className="metric-label">Active Customers</div>
-              <div className="metric-value">{new Set(allOrders.filter(o => o.status === 'delivered').map(o => o.userId)).size}</div>
-              <div className="metric-description">Made a purchase</div>
-            </div>
-
-            <div className="dashboard-card">
               <div className="metric-label">Total Orders</div>
               <div className="metric-value">{allOrders.length}</div>
               <div className="metric-description">All time orders</div>
             </div>
 
-            <div className="dashboard-card highlight">
+            <div className="dashboard-card">
               <div className="metric-label">Delivered Orders</div>
               <div className="metric-value">{allOrders.filter(o => o.status === 'delivered').length}</div>
               <div className="metric-description">{allOrders.length > 0 ? Math.round((allOrders.filter(o => o.status === 'delivered').length / allOrders.length) * 100) : 0}% completion</div>
             </div>
 
-            <div className="dashboard-card">
-              <div className="metric-label">Cancelled Orders</div>
-              <div className="metric-value">{allOrders.filter(o => o.status === 'cancelled').length}</div>
-              <div className="metric-description">{allOrders.length > 0 ? Math.round((allOrders.filter(o => o.status === 'cancelled').length / allOrders.length) * 100) : 0}% cancellation rate</div>
-            </div>
-
             <div className="dashboard-card highlight">
-              <div className="metric-label">Revenue</div>
-              <div className="metric-value">{allOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total || 0), 0)} LE</div>
-              <div className="metric-description">Delivered orders only</div>
-            </div>
-
-            <div className="dashboard-card">
               <div className="metric-label">Pending Orders</div>
               <div className="metric-value">{allOrders.filter(o => o.status === 'pending' || o.status === 'processing').length}</div>
               <div className="metric-description">Awaiting action</div>
+            </div>
+
+            <div className="dashboard-card">
+              <div className="metric-label">Active Customers</div>
+              <div className="metric-value">{new Set(allOrders.filter(o => o.status === 'delivered').map(o => o.userId)).size}</div>
+              <div className="metric-description">Made a purchase</div>
             </div>
 
             <div className="dashboard-card highlight">
@@ -466,10 +492,47 @@ const AdminDashboard = ({ user, handleSignOut }) => {
                     }
                   });
                   const bestItem = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0];
-                  return bestItem ? `${bestItem[0].substring(0, 15)} (${bestItem[1]}x)` : 'No sales';
+                  return bestItem ? `${bestItem[0].substring(0, 15)} (${bestItem[1]}x)` : 'No Sales';
                 })()}
               </div>
               <div className="metric-description">Most ordered product</div>
+            </div>
+
+            <div className="dashboard-card">
+              <div className="metric-label">Cancelled Orders</div>
+              <div className="metric-value">{allOrders.filter(o => o.status === 'cancelled').length}</div>
+              <div className="metric-description">{allOrders.length > 0 ? Math.round((allOrders.filter(o => o.status === 'cancelled').length / allOrders.length) * 100) : 0}% cancellation rate</div>
+            </div>
+
+            <div className="dashboard-card highlight">
+              <div className="metric-label">Pending Requests</div>
+              <div className="metric-value">{requests.filter(r => r.status === 'pending').length}</div>
+              <div className="metric-description">Awaiting review</div>
+            </div>
+
+            <div className="dashboard-card highlight">
+              <div className="metric-label">Revenue</div>
+              <div className="metric-value">{allOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total || 0), 0)} LE</div>
+              <div className="metric-description">Delivered orders only</div>
+            </div>
+
+            <div className="dashboard-card">
+              <div className="metric-label">Avg Delivery Time</div>
+              <div className="metric-value">
+                {(() => {
+                  const deliveredOrders = allOrders.filter(o => o.status === 'delivered' && o.createdAt && o.deliveryTime);
+                  if (deliveredOrders.length === 0) return '—';
+                  const totalDays = deliveredOrders.reduce((sum, o) => {
+                    const createdDate = new Date(o.createdAt);
+                    const deliveryDate = new Date(o.deliveryTime);
+                    const daysElapsed = Math.floor((deliveryDate - createdDate) / (1000 * 60 * 60 * 24));
+                    return sum + daysElapsed;
+                  }, 0);
+                  const avgDays = Math.round(totalDays / deliveredOrders.length);
+                  return `${avgDays} days`;
+                })()}
+              </div>
+              <div className="metric-description">Order to delivery</div>
             </div>
           </div>
 
@@ -709,13 +772,12 @@ const AdminDashboard = ({ user, handleSignOut }) => {
                         <p className="order-meta">
                           {order.name} | {order.phone} | {order.address}
                         </p>
-                        {order.deliveryTime && (
+                        {order.deliveryTime && order.status !== "cancelled" && order.status !== "delivered" && (
                           <div className="order-meta-with-edit">
                             <p className="order-meta">
                               Delivery: {new Date(order.deliveryTime).toLocaleString()}
                             </p>
-                            {order.status !== "cancelled" && (
-                              <button
+                            <button
                                 type="button"
                                 className="edit-delivery-btn"
                                 title="Edit delivery time"
@@ -728,7 +790,6 @@ const AdminDashboard = ({ user, handleSignOut }) => {
                               >
                                 <Edit2 size={16} />
                               </button>
-                            )}
                           </div>
                         )}
                       </div>
@@ -751,7 +812,7 @@ const AdminDashboard = ({ user, handleSignOut }) => {
                         ? order.items.map((item) => item.name).join(", ")
                         : "No items"}
                     </p>
-                    {order.status !== "cancelled" && (
+                    {order.status !== "cancelled" && order.status !== "delivered" && (
                       <div className="status-actions">
                         {["pending", "processing", "shipped", "delivered"].map(
                           (status) => (
@@ -761,6 +822,85 @@ const AdminDashboard = ({ user, handleSignOut }) => {
                               className={`status-button ${order.status === status ? "active" : ""}`}
                               onClick={() =>
                                 updateOrderStatus(order.dbKey, status)
+                              }
+                            >
+                              {status}
+                            </button>
+                          ),
+                        )}
+                      </div>
+                    )}
+                  </article>
+                ));
+              })()
+            )}
+          </div>
+        </section>
+
+        <section className="admin-section">
+          <div className="section-title-row centered">
+            <div>
+              <h2>Manage Requests</h2>
+            </div>
+          </div>
+
+          <div className="admin-card">
+            {requests.length === 0 ? (
+              <p className="loading-state">No requests yet.</p>
+            ) : (
+              (() => {
+                const statusOrder = {
+                  pending: 1,
+                  reviewed: 2,
+                  processing: 3,
+                  fulfilled: 4,
+                  rejected: 5,
+                };
+                const sortedRequests = [...requests].sort(
+                  (a, b) =>
+                    (statusOrder[a.status || "pending"] || 6) -
+                    (statusOrder[b.status || "pending"] || 6),
+                );
+                return sortedRequests.map((request) => (
+                  <article key={request.dbKey} className="order-manager-card">
+                    <div className="order-manager-top">
+                      <div>
+                        <p className="order-label">
+                          {request.itemName}
+                        </p>
+                        {request.category && (
+                          <p className="order-meta">
+                            Category: {request.category}
+                          </p>
+                        )}
+                        <p className="order-meta">
+                          From: {request.email}
+                        </p>
+                        {request.description && (
+                          <p className="order-meta">
+                            Notes: {request.description}
+                          </p>
+                        )}
+                        <p className="order-meta">
+                          Requested: {new Date(request.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <span
+                        className={`order-status status-${request.status || "pending"}`}
+                      >
+                        {request.status || "pending"}
+                      </span>
+                    </div>
+                    {request.status !== "rejected" && request.status !== "fulfilled" && (
+                      <div className="status-actions">
+                        {["pending", "reviewed", "processing", "fulfilled", "rejected"].map(
+                          (status) => (
+                            <button
+                              type="button"
+                              key={`${request.dbKey}-${status}`}
+                              className={`status-button ${request.status === status ? "active" : ""}`}
+                              onClick={() =>
+                                updateRequestStatus(request.dbKey, status)
                               }
                             >
                               {status}

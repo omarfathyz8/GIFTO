@@ -62,6 +62,13 @@ const GIFTOWebsite = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [editingProfile, setEditingProfile] = useState(null);
   const [cartLoaded, setCartLoaded] = useState(false);
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [requestForm, setRequestForm] = useState({
+    itemName: "",
+    category: "",
+    description: "",
+    email: "",
+  });
 
   const categories = [
     "All",
@@ -74,7 +81,7 @@ const GIFTOWebsite = () => {
     "Sets",
   ];
 
-  const isAdmin = user?.email === "admin@gifto.com";
+  const isAdmin = user?.email === "admin@gifto.com" || user?.email === "giftoo.storee@gmail.com";
   const isGuest = !user;
   const canUseCart = Boolean(user);
   const wishlistItems = products.filter((product) =>
@@ -795,6 +802,42 @@ const GIFTOWebsite = () => {
     showToast("Your order has been canceled.", "success");
   };
 
+  const handleSubmitRequest = async (event) => {
+    event.preventDefault();
+    setToast(null);
+
+    if (!requestForm.itemName || !requestForm.email) {
+      showToast("Item name and email are required.", "error");
+      return;
+    }
+
+    try {
+      const requestRef = push(dbRef(db, "requests"));
+      const requestData = {
+        itemName: requestForm.itemName,
+        category: requestForm.category,
+        description: requestForm.description,
+        email: requestForm.email || (user?.email || ""),
+        userId: user?.uid || null,
+        createdAt: serverTimestamp(),
+        status: "pending",
+      };
+
+      await set(requestRef, requestData);
+
+      setRequestForm({
+        itemName: "",
+        category: "",
+        description: "",
+        email: "",
+      });
+      setShowRequestForm(false);
+      showToast("Thank you! Your request has been submitted.", "success");
+    } catch (error) {
+      showToast("Failed to submit request. Please try again.", "error");
+    }
+  };
+
   const createOrder = async () => {
     if (!user) {
       setAuthOpen(true);
@@ -1007,6 +1050,13 @@ const GIFTOWebsite = () => {
               >
                 Shop Sets
               </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setShowRequestForm(true)}
+              >
+                Specific Request
+              </button>
             </div>
           </div>
         </section>
@@ -1180,7 +1230,7 @@ const GIFTOWebsite = () => {
                       </p>
                       {order.status !== "cancelled" && (
                         <p className="order-meta">
-                          Delivery at {formatTimestamp(order.deliveryTime || calculateDeliveryTime(order.createdAt))}
+                          Delivery on {formatTimestamp(order.deliveryTime || calculateDeliveryTime(order.createdAt))}
                         </p>
                       )}
                     </div>
@@ -1782,6 +1832,93 @@ const GIFTOWebsite = () => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showRequestForm && (
+        <div className="overlay" role="dialog" aria-modal="true">
+          <div className="modal-card">
+            <button
+              type="button"
+              className="modal-close"
+              onClick={() => setShowRequestForm(false)}
+            >
+              <X size={24} />
+            </button>
+            <h2 className="modal-title">✨ We'd Love to Know!</h2>
+            <p className="modal-subtitle">What are you dreaming of, and we'll make it special for you.</p>
+            <form className="auth-form" onSubmit={handleSubmitRequest}>
+              <label className="auth-label">
+                Item name
+                <input
+                  type="text"
+                  value={requestForm.itemName}
+                  onChange={(e) =>
+                    setRequestForm({
+                      ...requestForm,
+                      itemName: e.target.value,
+                    })
+                  }
+                  placeholder="e.g., Leather wallet in Navy blue"
+                  required
+                />
+              </label>
+              <label className="auth-label">
+                Category
+                <input
+                  type="text"
+                  value={requestForm.category}
+                  onChange={(e) =>
+                    setRequestForm({
+                      ...requestForm,
+                      category: e.target.value,
+                    })
+                  }
+                  placeholder="New Category or Existing"
+                  list="categories-list"
+                />
+                <datalist id="categories-list">
+                  {categories.filter((c) => c !== "All").map((category) => (
+                    <option key={category} value={category} />
+                  ))}
+                </datalist>
+              </label>
+              <label className="auth-label">
+                Description (optional)
+                <textarea
+                  value={requestForm.description}
+                  onChange={(e) =>
+                    setRequestForm({
+                      ...requestForm,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="Tell us more details about what you're looking for..."
+                  className="auth-input"
+                />
+              </label>
+              {!user && (
+                <label className="auth-label">
+                  Email
+                  <input
+                    type="email"
+                    value={requestForm.email}
+                    onChange={(e) =>
+                      setRequestForm({
+                        ...requestForm,
+                        email: e.target.value,
+                      })
+                    }
+                    placeholder="your@email.com"
+                    required
+                  />
+                </label>
+              )}
+              <button type="submit" className="primary-button full-width">
+                Submit Request
+              </button>
+            </form>
           </div>
         </div>
       )}

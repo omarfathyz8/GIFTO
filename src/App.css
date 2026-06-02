@@ -299,6 +299,34 @@
   background: var(--surface-soft);
 }
 
+.auth-label textarea {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  font-family: inherit;
+  font-size: 1rem;
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.auth-select {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  min-height: 2.75rem;
+  font-size: 1rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.auth-select option {
+  padding: 0.5rem;
+}
+
 .auth-switch {
   margin-top: 1rem;
   color: var(--muted);
@@ -818,6 +846,13 @@
   text-align: center;
 }
 
+.modal-subtitle {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+  text-align: center;
+}
+
 .order-summary {
   margin: 1.5rem 0;
   padding: 1.2rem 1.4rem;
@@ -1190,12 +1225,27 @@
   color: #166534;
 }
 
+.order-status.status-fulfilled {
+  background: #dcfce7;
+  color: #166534;
+}
+
 .order-status.status-delivered {
   background: #e0f2fe;
   color: #0c4a6e;
 }
 
+.order-status.status-reviewed {
+  background: #e0f2fe;
+  color: #0c4a6e;
+}
+
 .order-status.status-cancelled {
+  background: #f9e0e0;
+  color: #851d1d;
+}
+
+.order-status.status-rejected {
   background: #f9e0e0;
   color: #851d1d;
 }
@@ -1557,8 +1607,17 @@
   justify-content: center;
 }
 
-.dashboard-card:last-child .metric-value {
+.dashboard-grid .dashboard-card:nth-child(6) .metric-value {
   font-size: 1.5rem;
+}
+
+.dashboard-grid .dashboard-card:nth-child(9) {
+  width: 35vw;
+}
+
+.dashboard-grid .dashboard-card:nth-child(10) {
+  width: 35vw;
+  margin-left: 292px;
 }
 
 .metric-description {
