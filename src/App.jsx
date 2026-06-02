@@ -903,9 +903,10 @@ const GIFTOWebsite = () => {
     const orderRef = push(dbRef(db, "orders"));
     const currentTime = Date.now();
     const deliveryTime = calculateDeliveryTime(currentTime);
+    const orderId = `ORDER_${currentTime.toString().slice(-8)}`;
 
     const orderData = {
-      id: orderRef.key,
+      id: orderId,
       userId: user.uid,
       name: userProfile?.name || "",
       address: userProfile?.address || "",
