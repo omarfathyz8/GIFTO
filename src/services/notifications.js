@@ -94,7 +94,7 @@ export const sendOrderEmail = async (orderData, customerEmail) => {
       <p><strong>Payment Method:</strong> ${orderData.paymentMethod.toUpperCase()}</p>
       <p><strong>Status:</strong> ${orderData.status}</p>
 
-      <p>You can track your order status anytime at: <a href="https://giftoo-storee.vercel.app" style="color: #0066cc;">https://giftoo-storee.vercel.app</a></p>
+      <p>You can track your order status anytime at: <a href="https://giftoo-storee.vercel.app" style="color: #8b4513;">GIFTO Store</a></p>
       <p>We'll notify you when your order is shipped!</p>
       <p>Best regards,<br>GIFTO Team</p>
     `;
@@ -587,6 +587,80 @@ export const sendRequestRejectedEmail = async (requestData) => {
     return true;
   } catch (error) {
     console.error("Error sending request rejected email:", error);
+    return false;
+  }
+};
+
+export const sendShippedEmail = async (orderData, customerEmail) => {
+  if (!BREVO_API_KEY) {
+    console.warn("Brevo API key not configured");
+    return false;
+  }
+
+  try {
+    const itemsList = orderData.items
+      .map((item) => `<li>${item.name} (x${item.quantity}) - ${item.price * item.quantity} LE</li>`)
+      .join("");
+
+    const deliveryDate = orderData.deliveryTime
+      ? new Date(orderData.deliveryTime).toLocaleString()
+      : "TBD";
+
+    const htmlContent = `
+      <h2>Your Order is on the Way! 📦</h2>
+      <p>Hello ${orderData.name},</p>
+      <p>Great news! Your order has been shipped and is on its way to you!</p>
+
+      <h3>Order Details</h3>
+      <p><strong>Order ID:</strong> #${orderData.id}</p>
+      <p><strong>Total Amount:</strong> ${orderData.total} LE</p>
+
+      <h3>Items Shipped</h3>
+      <ul>
+        ${itemsList}
+      </ul>
+
+      <h3>Delivery Information</h3>
+      <p><strong>Delivery on</strong> ${deliveryDate}</p>
+      <p><strong>Delivery Address:</strong> ${orderData.address}</p>
+
+      <p>You can track your order status anytime at: <a href="https://giftoo-storee.vercel.app" style="color: #8b4513;">GIFTO Store</a></p>
+
+      <p>If you have any questions or concerns about your shipment, please contact us at <a href="mailto:giftoo.storee@gmail.com">giftoo.storee@gmail.com</a></p>
+
+      <p>Thank you for your order!<br>Best regards,<br>GIFTO Team</p>
+    `;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL,
+        },
+        to: [
+          {
+            email: customerEmail,
+            name: orderData.name,
+          },
+        ],
+        subject: `Your Order is Shipped - #${orderData.id}`,
+        htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Brevo API error:", await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error sending shipped email:", error);
     return false;
   }
 };

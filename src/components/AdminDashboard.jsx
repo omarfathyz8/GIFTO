@@ -10,7 +10,7 @@ import {
   push,
   serverTimestamp,
 } from "firebase/database";
-import { sendAdminNotification, sendRequestFulfilledEmail, sendRequestRejectedEmail } from "../services/notifications";
+import { sendAdminNotification, sendRequestFulfilledEmail, sendRequestRejectedEmail, sendShippedEmail } from "../services/notifications";
 import "../App.css";
 
 const AdminDashboard = ({ user, handleSignOut }) => {
@@ -368,6 +368,14 @@ const AdminDashboard = ({ user, handleSignOut }) => {
         },
       ],
     });
+
+    if (status === "shipped") {
+      const userEmail = users.find((u) => u.uid === order.userId)?.email;
+      if (userEmail) {
+        sendShippedEmail(order, userEmail);
+      }
+    }
+
     showToast(`Order status updated to ${status}.`, "success");
   };
 
