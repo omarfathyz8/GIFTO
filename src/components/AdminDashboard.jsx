@@ -748,105 +748,6 @@ const AdminDashboard = ({ user, handleSignOut }) => {
         <section className="admin-section">
           <div className="section-title-row centered">
             <div>
-              <h2>Manage Orders</h2>
-            </div>
-          </div>
-
-          <div className="admin-card">
-            {allOrders.length === 0 ? (
-              <p className="loading-state">No orders yet.</p>
-            ) : (
-              (() => {
-                const statusOrder = {
-                  pending: 1,
-                  processing: 2,
-                  shipped: 3,
-                  delivered: 4,
-                  cancelled: 5,
-                };
-                const sortedOrders = [...allOrders].sort(
-                  (a, b) =>
-                    (statusOrder[a.status || "pending"] || 6) -
-                    (statusOrder[b.status || "pending"] || 6),
-                );
-                return sortedOrders.map((order) => (
-                  <article key={order.dbKey} className="order-manager-card">
-                    <div className="order-manager-top">
-                      <div>
-                        <p className="order-label">
-                          #{order.id} - {order.total} LE
-                        </p>
-                        <p className="order-meta">
-                          {order.name} | {order.phone} | {order.address}
-                        </p>
-                        {order.deliveryTime && order.status !== "cancelled" && order.status !== "delivered" && (
-                          <div className="order-meta-with-edit">
-                            <p className="order-meta">
-                              Delivery: {new Date(order.deliveryTime).toLocaleString()}
-                            </p>
-                            <button
-                                type="button"
-                                className="edit-delivery-btn"
-                                title="Edit delivery time"
-                                onClick={() => {
-                                  setEditingDeliveryTime(order.dbKey);
-                                  setDeliveryTimeInput(
-                                    new Date(order.deliveryTime).toISOString().slice(0, 16)
-                                  );
-                                }}
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                          </div>
-                        )}
-                      </div>
-                      <span
-                        className={`order-status status-${order.status || "pending"}`}
-                      >
-                        {order.status || "pending"}
-                      </span>
-                    </div>
-                    {order.giftWrap && (
-                      <p className="order-summary-text">Gift wrap: Yes</p>
-                    )}
-                    {order.cardMessage ? (
-                      <p className="order-summary-text">
-                        Message card: {order.cardMessage}
-                      </p>
-                    ) : null}
-                    <p className="order-summary-text">
-                      {order.items.length > 0
-                        ? order.items.map((item) => item.name).join(", ")
-                        : "No items"}
-                    </p>
-                    {order.status !== "cancelled" && order.status !== "delivered" && (
-                      <div className="status-actions">
-                        {["pending", "processing", "shipped", "delivered"].map(
-                          (status) => (
-                            <button
-                              type="button"
-                              key={`${order.dbKey}-${status}`}
-                              className={`status-button ${order.status === status ? "active" : ""}`}
-                              onClick={() =>
-                                updateOrderStatus(order.dbKey, status)
-                              }
-                            >
-                              {status}
-                            </button>
-                          ),
-                        )}
-                      </div>
-                    )}
-                  </article>
-                ));
-              })()
-            )}
-          </div>
-        </section>
-
-        <section className="admin-section">
-          <div className="section-title-row centered">
-            <div>
               <h2>Manage Requests</h2>
             </div>
           </div>
@@ -918,6 +819,240 @@ const AdminDashboard = ({ user, handleSignOut }) => {
                     )}
                   </article>
                 ));
+              })()
+            )}
+          </div>
+        </section>
+
+        <section className="admin-section">
+          <div className="section-title-row centered">
+            <div>
+              <h2>Manage Orders</h2>
+            </div>
+          </div>
+
+          <div className="admin-inventory-grid">
+            <div className="admin-card">
+              <h3>Pending Orders</h3>
+              {allOrders.filter(o => o.status === "pending" || !o.status).length === 0 ? (
+                <p className="loading-state">No pending orders.</p>
+              ) : (
+                allOrders
+                  .filter(o => o.status === "pending" || !o.status)
+                  .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+                  .map((order) => (
+                    <article key={order.dbKey} className="order-manager-card">
+                      <div className="order-manager-top">
+                        <div>
+                          <p className="order-label">
+                            #{order.id} - {order.total} LE
+                          </p>
+                          <p className="order-meta">
+                            {order.name} | {order.phone} | {order.address}
+                          </p>
+                          {order.deliveryTime && (
+                            <div className="order-meta-with-edit">
+                              <p className="order-meta">
+                                Delivery: {new Date(order.deliveryTime).toLocaleString()}
+                              </p>
+                              <button
+                                type="button"
+                                className="edit-delivery-btn"
+                                title="Edit delivery time"
+                                onClick={() => {
+                                  setEditingDeliveryTime(order.dbKey);
+                                  setDeliveryTimeInput(
+                                    new Date(order.deliveryTime).toISOString().slice(0, 16)
+                                  );
+                                }}
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        <span className={`order-status status-${order.status || "pending"}`}>
+                          {order.status || "pending"}
+                        </span>
+                      </div>
+                      {order.giftWrap && (
+                        <p className="order-summary-text">Gift wrap: Yes</p>
+                      )}
+                      {order.cardMessage && (
+                        <p className="order-summary-text">
+                          Message card: {order.cardMessage}
+                        </p>
+                      )}
+                      <p className="order-summary-text">
+                        {order.items.length > 0
+                          ? order.items.map((item) => item.name).join(", ")
+                          : "No items"}
+                      </p>
+                      <div className="status-actions">
+                        {["pending", "processing", "shipped", "delivered"].map(
+                          (status) => (
+                            <button
+                              type="button"
+                              key={`${order.dbKey}-${status}`}
+                              className={`status-button ${order.status === status ? "active" : ""}`}
+                              onClick={() =>
+                                updateOrderStatus(order.dbKey, status)
+                              }
+                            >
+                              {status}
+                            </button>
+                          ),
+                        )}
+                      </div>
+                    </article>
+                  ))
+              )}
+            </div>
+
+            <div className="admin-card">
+              <h3>Processing Orders</h3>
+              {allOrders.filter(o => o.status === "processing").length === 0 ? (
+                <p className="loading-state">No processing orders.</p>
+              ) : (
+                allOrders
+                  .filter(o => o.status === "processing")
+                  .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+                  .map((order) => (
+                    <article key={order.dbKey} className="order-manager-card">
+                      <div className="order-manager-top">
+                        <div>
+                          <p className="order-label">
+                            #{order.id} - {order.total} LE
+                          </p>
+                          <p className="order-meta">
+                            {order.name} | {order.phone} | {order.address}
+                          </p>
+                          {order.deliveryTime && (
+                            <div className="order-meta-with-edit">
+                              <p className="order-meta">
+                                Delivery: {new Date(order.deliveryTime).toLocaleString()}
+                              </p>
+                              <button
+                                type="button"
+                                className="edit-delivery-btn"
+                                title="Edit delivery time"
+                                onClick={() => {
+                                  setEditingDeliveryTime(order.dbKey);
+                                  setDeliveryTimeInput(
+                                    new Date(order.deliveryTime).toISOString().slice(0, 16)
+                                  );
+                                }}
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        <span className={`order-status status-${order.status || "pending"}`}>
+                          {order.status || "pending"}
+                        </span>
+                      </div>
+                      {order.giftWrap && (
+                        <p className="order-summary-text">Gift wrap: Yes</p>
+                      )}
+                      {order.cardMessage && (
+                        <p className="order-summary-text">
+                          Message card: {order.cardMessage}
+                        </p>
+                      )}
+                      <p className="order-summary-text">
+                        {order.items.length > 0
+                          ? order.items.map((item) => item.name).join(", ")
+                          : "No items"}
+                      </p>
+                      <div className="status-actions">
+                        {["pending", "processing", "shipped", "delivered"].map(
+                          (status) => (
+                            <button
+                              type="button"
+                              key={`${order.dbKey}-${status}`}
+                              className={`status-button ${order.status === status ? "active" : ""}`}
+                              onClick={() =>
+                                updateOrderStatus(order.dbKey, status)
+                              }
+                            >
+                              {status}
+                            </button>
+                          ),
+                        )}
+                      </div>
+                    </article>
+                  ))
+              )}
+            </div>
+          </div>
+
+          <div className="admin-card">
+            <h3>Shipped, Delivered & Cancelled Orders</h3>
+            {allOrders.filter(o => o.status === "shipped" || o.status === "delivered" || o.status === "cancelled").length === 0 ? (
+              <p className="loading-state">No completed orders yet.</p>
+            ) : (
+              (() => {
+                const statusOrder = {
+                  shipped: 1,
+                  delivered: 2,
+                  cancelled: 3,
+                };
+                return allOrders
+                  .filter(o => o.status === "shipped" || o.status === "delivered" || o.status === "cancelled")
+                  .sort((a, b) => {
+                    const statusDiff = (statusOrder[a.status] || 4) - (statusOrder[b.status] || 4);
+                    if (statusDiff !== 0) return statusDiff;
+                    return (b.createdAt || 0) - (a.createdAt || 0);
+                  })
+                  .map((order) => (
+                  <article key={order.dbKey} className="order-manager-card">
+                    <div className="order-manager-top">
+                      <div>
+                        <p className="order-label">
+                          #{order.id} - {order.total} LE
+                        </p>
+                        <p className="order-meta">
+                          {order.name} | {order.phone} | {order.address}
+                        </p>
+                        {order.deliveryTime && order.status !== "cancelled" && (
+                          <p className="order-meta">
+                            Delivered: {new Date(order.deliveryTime).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      <span className={`order-status status-${order.status || "pending"}`}>
+                        {order.status || "pending"}
+                      </span>
+                    </div>
+                    {order.giftWrap && (
+                      <p className="order-summary-text">Gift wrap: Yes</p>
+                    )}
+                    {order.cardMessage && (
+                      <p className="order-summary-text">
+                        Message card: {order.cardMessage}
+                      </p>
+                    )}
+                    <p className="order-summary-text">
+                      {order.items.length > 0
+                        ? order.items.map((item) => item.name).join(", ")
+                        : "No items"}
+                    </p>
+                    {order.status === "shipped" && (
+                      <div className="status-actions">
+                        <button
+                          type="button"
+                          className="status-button"
+                          onClick={() =>
+                            updateOrderStatus(order.dbKey, "delivered")
+                          }
+                        >
+                          Mark as Delivered
+                        </button>
+                      </div>
+                    )}
+                  </article>
+                  ));
               })()
             )}
           </div>
