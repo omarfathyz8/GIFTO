@@ -1144,12 +1144,24 @@ const GIFTOWebsite = () => {
           ) : filteredProducts.length === 0 ? (
             <p className="loading-state">No products available yet.</p>
           ) : (
-            filteredProducts.map((product) => {
-              const images = product.images || [];
-              const currentIdx = currentImageIndex[product.id] || 0;
-              const currentImage = images[currentIdx];
+            (() => {
+              const itemCounts = {};
+              allOrders.forEach(order => {
+                if (order.items && Array.isArray(order.items)) {
+                  order.items.forEach(item => {
+                    itemCounts[item.name] = (itemCounts[item.name] || 0) + item.quantity;
+                  });
+                }
+              });
+              const bestSellerName = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
 
-              return (
+              return filteredProducts.map((product) => {
+                const images = product.images || [];
+                const currentIdx = currentImageIndex[product.id] || 0;
+                const currentImage = images[currentIdx];
+                const isBestSeller = product.name === bestSellerName;
+
+                return (
                 <article key={product.id} className="product-card">
                   <div className="product-image">
                     {currentImage && currentImage.startsWith("data:") ? (
@@ -1169,7 +1181,10 @@ const GIFTOWebsite = () => {
                   </div>
                 <div className="product-body">
                   <p className="product-category">{product.category}</p>
-                  <h2 className="product-title">{product.name}</h2>
+                  <div className="product-title-wrapper">
+                    <h2 className="product-title">{product.name}</h2>
+                    {isBestSeller && <span className="best-seller-badge">Best Seller</span>}
+                  </div>
                   <p className="product-description">{product.description}</p>
                   <div className="product-meta">
                     <span className="product-price">{product.price} LE</span>
@@ -1260,7 +1275,8 @@ const GIFTOWebsite = () => {
                 </div>
               </article>
               );
-            })
+              });
+            })()
           )}
         </section>
 
