@@ -307,7 +307,7 @@
   background: var(--surface-soft);
   font-family: inherit;
   font-size: 1rem;
-  min-height: 5rem;
+  min-height: 4rem;
   resize: vertical;
 }
 
@@ -1725,7 +1725,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.75rem;
 }
 
 .request-label {
@@ -1741,8 +1740,12 @@
 }
 
 .request-description {
-  margin: 0.35rem 0;
+  margin: -0.35rem 0;
   color: var(--muted);
   font-size: 0.95rem;
   line-height: 1.5;
+}
+
+.request-card-header .order-meta {
+  margin-top: 0.1rem !important;
 }

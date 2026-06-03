@@ -40,14 +40,19 @@ const ManageRequests = ({ requests, updateRequestStatus }) => {
                         Category: {request.category}
                       </p>
                     )}
-                    <p className="order-meta">
-                      From: {request.email}
-                    </p>
                     {request.description && (
                       <p className="order-meta">
                         Notes: {request.description}
                       </p>
                     )}
+                    {(request.budgetMin !== null && request.budgetMin !== undefined && request.budgetMin !== "") || (request.budgetMax !== null && request.budgetMax !== undefined && request.budgetMax !== "") ? (
+                      <p className="order-meta">
+                        Budget: {request.budgetMin || "—"} - {request.budgetMax || "—"} LE
+                      </p>
+                    ) : null}
+                    <p className="order-meta">
+                      From: <a href={`mailto:${request.email}`} style={{ color: "#8b4513", textDecoration: "underline", cursor: "pointer" }}>{request.email}</a>
+                    </p>
                     <p className="order-meta">
                       Requested on {new Date(request.createdAt).toLocaleString()}
                     </p>

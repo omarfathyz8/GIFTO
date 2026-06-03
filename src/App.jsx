@@ -68,6 +68,8 @@ const GIFTOWebsite = () => {
     category: "",
     description: "",
     email: "",
+    budgetMin: "",
+    budgetMax: "",
   });
   const [showTrackRequest, setShowTrackRequest] = useState(false);
   const [trackingEmail, setTrackingEmail] = useState("");
@@ -824,6 +826,8 @@ const GIFTOWebsite = () => {
         category: requestForm.category,
         description: requestForm.description,
         email: requestForm.email || (user?.email || ""),
+        budgetMin: requestForm.budgetMin ? Number(requestForm.budgetMin) : null,
+        budgetMax: requestForm.budgetMax ? Number(requestForm.budgetMax) : null,
         userId: user?.uid || null,
         createdAt: serverTimestamp(),
         status: "pending",
@@ -839,6 +843,8 @@ const GIFTOWebsite = () => {
         category: "",
         description: "",
         email: "",
+        budgetMin: "",
+        budgetMax: "",
       });
       setShowRequestForm(false);
       showToast("Thank you! Your request has been submitted.", "success");
@@ -1987,6 +1993,38 @@ const GIFTOWebsite = () => {
                   className="auth-input"
                 />
               </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <label className="auth-label">
+                  Budget Min (LE) (optional)
+                  <input
+                    type="number"
+                    min="0"
+                    value={requestForm.budgetMin}
+                    onChange={(e) =>
+                      setRequestForm({
+                        ...requestForm,
+                        budgetMin: e.target.value,
+                      })
+                    }
+                    placeholder="e.g., 100"
+                  />
+                </label>
+                <label className="auth-label">
+                  Budget Max (LE) (optional)
+                  <input
+                    type="number"
+                    min="0"
+                    value={requestForm.budgetMax}
+                    onChange={(e) =>
+                      setRequestForm({
+                        ...requestForm,
+                        budgetMax: e.target.value,
+                      })
+                    }
+                    placeholder="e.g., 500"
+                  />
+                </label>
+              </div>
               {!user && (
                 <label className="auth-label">
                   Email
@@ -2063,10 +2101,18 @@ const GIFTOWebsite = () => {
                     <article key={request.dbKey} className="request-card">
                       <div className="request-card-header">
                         <div>
-                          <p className="request-label">Request {index + 1}</p>
+                          <p className="request-label">Request {index + 1}: {request.itemName}</p>
                           <p className="request-meta">
                             Submitted {formatTimestamp(request.createdAt)}
                           </p>
+                          {(request.budgetMin !== null && request.budgetMin !== undefined && request.budgetMin !== "") || (request.budgetMax !== null && request.budgetMax !== undefined && request.budgetMax !== "") ? (
+                            <p className="request-meta">
+                              Budget: {request.budgetMin || "—"} - {request.budgetMax || "—"} LE
+                            </p>
+                          ) : null}
+                          {request.description && (
+                            <p className="request-description">{request.description}</p>
+                          )}
                         </div>
                         <span
                           className={`order-status status-${request.status || "pending"}`}
@@ -2074,13 +2120,6 @@ const GIFTOWebsite = () => {
                           {request.status || "pending"}
                         </span>
                       </div>
-                      <p className="request-item-name">{request.itemName}</p>
-                      {request.category && (
-                        <p className="request-meta">Category: {request.category}</p>
-                      )}
-                      {request.description && (
-                        <p className="request-description">{request.description}</p>
-                      )}
                     </article>
                   ))}
                 </div>
@@ -2224,7 +2263,7 @@ const GIFTOWebsite = () => {
           <div className="footer-column">
             <h4>Social Media</h4>
             <p>
-              <a href="https://www.facebook.com/profile.php?id=61590764780676" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+              <a href="https://www.facebook.com/profile.php?id=61590815960981" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
                 Facebook
               </a>
             </p>
