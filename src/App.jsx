@@ -80,6 +80,9 @@ const GIFTOWebsite = () => {
   const [trackedRequests, setTrackedRequests] = useState([]);
   const [trackingSearched, setTrackingSearched] = useState(false);
   const [searchedEmail, setSearchedEmail] = useState("");
+  const [showBudgetFilter, setShowBudgetFilter] = useState(false);
+  const [budgetInput, setBudgetInput] = useState("");
+  const [budgetLimit, setBudgetLimit] = useState("");
 
   const categories = [
     "All",
@@ -1062,10 +1065,12 @@ const GIFTOWebsite = () => {
   const filteredProducts = products
     .filter((product) => {
       const query = searchQuery.toLowerCase();
-      return (
+      const matchesSearch = (
         product.name.toLowerCase().includes(query) ||
         product.category.toLowerCase().includes(query)
       );
+      const matchesBudget = !budgetLimit || product.price <= Number(budgetLimit);
+      return matchesSearch && matchesBudget;
     })
     .sort((a, b) => {
       if (a.name === bestSellerName) return -1;
@@ -1185,6 +1190,13 @@ const GIFTOWebsite = () => {
               care and local charm.
             </p>
             <div className="hero-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setShowBudgetFilter(true)}
+              >
+                Set Budget
+              </button>
               <button
                 type="button"
                 className="secondary-button"
@@ -2254,6 +2266,66 @@ const GIFTOWebsite = () => {
                   ))}
                 </div>
               </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showBudgetFilter && (
+        <div className="overlay" role="dialog" aria-modal="true">
+          <div className="modal-card">
+            <button
+              type="button"
+              className="modal-close"
+              onClick={() => {
+                setShowBudgetFilter(false);
+                setBudgetInput("");
+              }}
+            >
+              <X size={24} />
+            </button>
+            <h2 className="modal-title">Set Your Budget</h2>
+            <p className="modal-subtitle">Filter items by maximum price</p>
+            <form
+              className="auth-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setBudgetLimit(budgetInput);
+                setShowBudgetFilter(false);
+              }}
+            >
+              <label className="auth-label">
+                Maximum Price (LE)
+                <input
+                  type="number"
+                  min="0"
+                  value={budgetInput}
+                  onChange={(e) => setBudgetInput(e.target.value)}
+                  placeholder="e.g., 500"
+                  required
+                />
+              </label>
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button type="submit" className="primary-button full-width">
+                  Apply Budget
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button full-width"
+                  onClick={() => {
+                    setBudgetLimit("");
+                    setBudgetInput("");
+                    setShowBudgetFilter(false);
+                  }}
+                >
+                  Clear Filter
+                </button>
+              </div>
+            </form>
+            {budgetLimit && (
+              <p style={{ marginTop: "16px", textAlign: "center", color: "#666" }}>
+                Showing items up to {budgetLimit} LE
+              </p>
             )}
           </div>
         </div>
