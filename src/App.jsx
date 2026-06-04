@@ -85,14 +85,12 @@ const GIFTOWebsite = () => {
     "All",
     "Wallets",
     "Watches",
-    "Perfumes",
     "Medals",
     "Flowers",
     "Accessories",
     "Notebooks",
     "Mugs",
     "Tech Accessories",
-    "Decor",
     "Sets",
   ];
 
@@ -1187,31 +1185,6 @@ const GIFTOWebsite = () => {
               care and local charm.
             </p>
             <div className="hero-actions">
-              {canUseCart && (
-                <button
-                  type="button"
-                  className="primary-button"
-                  onClick={() => setShowCart(true)}
-                >
-                  View Cart
-                </button>
-              )}
-              {canUseCart && (
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => setShowWishlist(true)}
-                >
-                  View Wishlist
-                </button>
-              )}
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => setSearchQuery("Sets")}
-              >
-                Shop Sets
-              </button>
               <button
                 type="button"
                 className="secondary-button"
