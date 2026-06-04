@@ -132,9 +132,10 @@ const GIFTOWebsite = () => {
   const isAdmin = user?.email === "giftoo.storee@gmail.com";
   const isGuest = !user;
   const canUseCart = Boolean(user);
-  const wishlistItems = products.filter((product) =>
-    wishlists.has(product.id.toString()),
-  );
+  const wishlistItems = products.filter((product) => {
+    const colorNames = Object.keys(product.colors || {});
+    return colorNames.some((color) => wishlists.has(`${color} ${product.name}`));
+  });
 
   useEffect(() => {
     const savedWishlist = window.localStorage.getItem("gift-store-wishlist");
@@ -193,11 +194,8 @@ const GIFTOWebsite = () => {
       wishlistRef,
       (snapshot) => {
         const value = snapshot.val() || {};
-        const savedNames = Object.keys(value).filter((key) => value[key] !== null && value[key] !== undefined);
-        const savedIds = products
-          .filter((p) => savedNames.includes(p.name))
-          .map((p) => p.id.toString());
-        setWishlists(new Set(savedIds));
+        const savedKeys = Object.keys(value).filter((key) => value[key] !== null && value[key] !== undefined);
+        setWishlists(new Set(savedKeys));
       },
       (error) => {
         console.error("Wishlist error:", error);
@@ -361,6 +359,7 @@ const GIFTOWebsite = () => {
             phone: authPhone,
             createdAt: createdUser.metadata?.creationTime || "",
             lastSeen: serverTimestamp(),
+            ordersCount: 0,
           });
         }
         showToast("Account created successfully.", "success");
@@ -454,10 +453,11 @@ const GIFTOWebsite = () => {
   };
 
   const increaseCartQuantity = (productId, selectedColor = null) => {
-    const product = products.find((p) => p.id === productId);
+    const product = products.find((p) => String(p.id) === String(productId));
     if (!product) return;
     const cartItem = cart.find((item) => item.id === productId && item.selectedColor === selectedColor);
-    if (cartItem && cartItem.quantity >= getInventory(product)) {
+    const available = getAvailableInventory(product, selectedColor);
+    if (available === 0) {
       showToast("Not enough inventory available.", "error");
       return;
     }
@@ -469,16 +469,16 @@ const GIFTOWebsite = () => {
   const getProductQuantity = (productId) => {
     return productQuantities[productId] || 1;
   };
-  const getCartQuantity = (productId, selectedColor = null) => cart.find((item) => item.id === productId && item.selectedColor === selectedColor)?.quantity || 0;
+  const getCartQuantity = (productId, selectedColor = null) => cart.find((item) => String(item.id) === String(productId) && item.selectedColor === selectedColor)?.quantity || 0;
   const getInventory = (product, selectedColor = null) => {
-    if (!selectedColor) return 0;
+    if (!product || !selectedColor) return 0;
     const colors = product.colors || {};
     const colorData = colors[selectedColor];
     if (!colorData) return 0;
     return Number.isFinite(Number(colorData.stock)) ? Number(colorData.stock) : 0;
   };
   const getAvailableInventory = (product, selectedColor = null) => {
-    if (!selectedColor) return 0;
+    if (!product || !selectedColor) return 0;
     const inventory = getInventory(product, selectedColor);
     const cartQty = getCartQuantity(product.id, selectedColor);
     return Math.max(inventory - cartQty, 0);
@@ -501,7 +501,7 @@ const GIFTOWebsite = () => {
     const selectedColor = selectedColors[product.id] || Object.keys(product.colors || {})[0] || "Default";
     const available = getAvailableInventory(product, selectedColor);
     if (available === 0) {
-      showToast("Wait for a restock soon.", "error");
+      showToast("Wait for a restock soon OR request it.", "error");
       return;
     }
     const quantityToAdd = Math.min(quantity, available);
@@ -529,23 +529,25 @@ const GIFTOWebsite = () => {
     );
   };
 
-  const toggleWishlist = async (productId) => {
+  const toggleWishlist = async (productId, selectedColor = null) => {
     const product = products.find((p) => p.id === productId);
     if (!product) return;
 
-    const isWishlisted = wishlists.has(product.id.toString());
+    const color = selectedColor || selectedColors[productId] || Object.keys(product.colors || {})[0];
+    const wishlistKey = `${color} ${product.name}`;
+    const isWishlisted = wishlists.has(wishlistKey);
     const updatedWishlist = new Set(wishlists);
 
     if (isWishlisted) {
-      updatedWishlist.delete(product.id.toString());
+      updatedWishlist.delete(wishlistKey);
     } else {
-      updatedWishlist.add(product.id.toString());
+      updatedWishlist.add(wishlistKey);
     }
 
     setWishlists(updatedWishlist);
 
     if (user) {
-      await set(dbRef(db, `users/${user.uid}/wishlist/${product.name}`), isWishlisted ? null : "");
+      await set(dbRef(db, `users/${user.uid}/wishlist/${color} ${product.name}`), isWishlisted ? null : { color });
     }
   };
 
@@ -1030,16 +1032,30 @@ const GIFTOWebsite = () => {
     sendAdminNotification(orderData, user.email);
     submitToGoogleForms(orderData, user.email);
 
+    try {
+      const userRef = dbRef(db, `users/${user.uid}`);
+      const snapshot = await new Promise((resolve) => {
+        onValue(userRef, (snap) => resolve(snap.val()), { once: true });
+      });
+      const currentCount = snapshot?.ordersCount || 0;
+      await update(userRef, {
+        ordersCount: currentCount + 1,
+      });
+    } catch (error) {
+      console.error("Error updating orders count:", error);
+    }
+
     for (const item of cart) {
       const product = products.find((p) => p.id === item.id);
       if (product && product.dbKey) {
-        const newInventory = Math.max(
-          (Number(product.inventory) || 0) - item.quantity,
-          0,
-        );
-        await update(dbRef(db, `products/${product.dbKey}`), {
-          inventory: newInventory,
-        });
+        const selectedColor = item.selectedColor;
+        if (selectedColor && product.colors && product.colors[selectedColor]) {
+          const currentStock = Number(product.colors[selectedColor].stock) || 0;
+          const newStock = Math.max(currentStock - item.quantity, 0);
+          await update(dbRef(db, `products/${product.dbKey}/colors/${selectedColor}`), {
+            stock: newStock,
+          });
+        }
       }
     }
 
@@ -1314,9 +1330,9 @@ const GIFTOWebsite = () => {
                       <button
                         type="button"
                         className="wishlist-button"
-                        onClick={() => toggleWishlist(product.id)}
+                        onClick={() => toggleWishlist(product.id, selectedColor || colorNames[0])}
                         aria-label={
-                          wishlists.has(product.id.toString())
+                          wishlists.has(`${selectedColor || colorNames[0]} ${product.name}`)
                             ? "Remove from wishlist"
                             : "Add to wishlist"
                         }
@@ -1324,12 +1340,12 @@ const GIFTOWebsite = () => {
                         <Heart
                           size={20}
                           fill={
-                            wishlists.has(product.id.toString())
+                            wishlists.has(`${selectedColor || colorNames[0]} ${product.name}`)
                               ? "#f43f5e"
                               : "none"
                           }
                           color={
-                            wishlists.has(product.id.toString())
+                            wishlists.has(`${selectedColor || colorNames[0]} ${product.name}`)
                               ? "#dc2626"
                               : "#9ca3af"
                           }
@@ -1345,12 +1361,12 @@ const GIFTOWebsite = () => {
                           className="quantity-button"
                           onClick={() => decrementProductQuantity(product.id)}
                           aria-label={`Decrease quantity of ${product.name}`}
-                          disabled={getProductQuantity(product.id) <= 1}
+                          disabled={getProductQuantity(product.id) <= 1 || getAvailableInventory(product, selectedColor) === 0}
                         >
                           −
                         </button>
                         <span className="quantity-value">
-                          {getProductQuantity(product.id)}
+                          {getAvailableInventory(product, selectedColor) === 0 ? 0 : getProductQuantity(product.id)}
                         </span>
                         <button
                           type="button"
@@ -1588,11 +1604,13 @@ const GIFTOWebsite = () => {
             ) : (
               <>
                 <div className="cart-items">
-                  {cart.map((item) => (
+                  {cart.map((item) => {
+                    const product = products.find((p) => String(p.id) === String(item.id));
+                    const available = getAvailableInventory(product, item.selectedColor);
+                    return (
                     <div key={`${item.id}_${item.selectedColor}`} className="cart-item">
                       <div>
-                        <p className="cart-item-name">{item.name}</p>
-                        {item.selectedColor && <p className="cart-item-meta">Color: {item.selectedColor}</p>}
+                        <p className="cart-item-name">{item.selectedColor} {item.name}</p>
                         <p className="cart-item-meta">{item.price} LE each</p>
                         <div className="cart-item-quantity">
                           <button
@@ -1609,9 +1627,14 @@ const GIFTOWebsite = () => {
                           <button
                             type="button"
                             className="quantity-button"
-                            onClick={() => increaseCartQuantity(item.id, item.selectedColor)}
+                            onClick={() => {
+                              if (available === 0) {
+                                showToast("Not enough inventory available.", "error");
+                                return;
+                              }
+                              increaseCartQuantity(item.id, item.selectedColor);
+                            }}
                             aria-label={`Increase quantity of ${item.name}`}
-                            disabled={item.quantity >= getInventory(products.find((p) => p.id === item.id), item.selectedColor) || getInventory(products.find((p) => p.id === item.id), item.selectedColor) === 0}
                           >
                             +
                           </button>
@@ -1630,7 +1653,8 @@ const GIFTOWebsite = () => {
                         </button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="cart-settings">
@@ -1728,41 +1752,47 @@ const GIFTOWebsite = () => {
               </p>
             ) : (
               <div className="cart-items">
-                {wishlistItems.map((product) => (
-                  <div key={product.id} className="cart-item">
-                    <div>
-                      <p className="cart-item-name">{product.name}</p>
-                      <p className="cart-item-meta">{product.price} LE</p>
-                      <p className="order-summary-text">{product.category}</p>
-                    </div>
-                    <div className="cart-item-actions">
-                      <button
-                        type="button"
-                        className="secondary-button small"
-                        onClick={() => toggleWishlist(product.id)}
-                      >
-                        Remove
-                      </button>
-                      <button
-                        type="button"
-                        className="primary-button small"
-                        onClick={() => {
-                          const available = getAvailableInventory(product);
-                          if (available === 0) {
-                            showToast("Wait for a restock soon.", "error");
-                            return;
-                          }
-                          addToCart(product, 1);
-                          toggleWishlist(product.id);
-                          setShowWishlist(false);
-                          setShowCart(true);
-                        }}
-                      >
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                {wishlistItems.map((product) => {
+                  const colorNames = Object.keys(product.colors || {});
+                  return colorNames
+                    .filter((color) => wishlists.has(`${color} ${product.name}`))
+                    .map((color) => (
+                      <div key={`${color} ${product.name}`} className="cart-item">
+                        <div>
+                          <p className="cart-item-name">{color} {product.name}</p>
+                          <p className="cart-item-meta">{product.price} LE</p>
+                          <p className="order-summary-text">{product.category}</p>
+                        </div>
+                        <div className="cart-item-actions">
+                          <button
+                            type="button"
+                            className="secondary-button small"
+                            onClick={() => toggleWishlist(product.id, color)}
+                          >
+                            Remove
+                          </button>
+                          <button
+                            type="button"
+                            className="primary-button small"
+                            onClick={() => {
+                              const available = getAvailableInventory(product, color);
+                              if (available === 0) {
+                                showToast("Wait for a restock soon OR request it.", "error");
+                                return;
+                              }
+                              setSelectedColors((prev) => ({ ...prev, [product.id]: color }));
+                              addToCart(product, 1);
+                              toggleWishlist(product.id, color);
+                              setShowWishlist(false);
+                              setShowCart(true);
+                            }}
+                          >
+                            Add to Cart
+                          </button>
+                        </div>
+                      </div>
+                    ));
+                })}
               </div>
             )}
           </div>
@@ -1977,14 +2007,6 @@ const GIFTOWebsite = () => {
                   />
                 </label>
                 <label className="auth-label">
-                  Email
-                  <input
-                    type="email"
-                    value={editingProfile.email || ""}
-                    disabled
-                  />
-                </label>
-                <label className="auth-label">
                   Address
                   <textarea
                     value={editingProfile.address || ""}
@@ -2041,6 +2063,10 @@ const GIFTOWebsite = () => {
                 <div className="profile-field">
                   <p className="profile-label">Phone number</p>
                   <p className="profile-value">{userProfile?.phone || "—"}</p>
+                </div>
+                <div className="profile-field">
+                  <p className="profile-label">Orders Made</p>
+                  <p className="profile-value">{userProfile?.ordersCount ? userProfile.ordersCount : "No orders yet"}</p>
                 </div>
                 <div className="profile-field">
                   <p className="profile-label">Member since</p>
@@ -2352,7 +2378,10 @@ const GIFTOWebsite = () => {
               {cart.length === 0 ? (
                 <p className="empty-state">No items in cart.</p>
               ) : (
-                cart.map((item) => (
+                cart.map((item) => {
+                  const product = products.find((p) => String(p.id) === String(item.id));
+                  const available = getAvailableInventory(product, item.selectedColor);
+                  return (
                   <div key={`${item.id}_${item.selectedColor}`} className="checkout-item">
                     <div>
                       <p className="cart-item-name">{item.name}</p>
@@ -2373,9 +2402,14 @@ const GIFTOWebsite = () => {
                         <button
                           type="button"
                           className="quantity-button"
-                          onClick={() => increaseCartQuantity(item.id, item.selectedColor)}
+                          onClick={() => {
+                            if (available === 0) {
+                              showToast("Not enough inventory available.", "error");
+                              return;
+                            }
+                            increaseCartQuantity(item.id, item.selectedColor);
+                          }}
                           aria-label={`Increase quantity of ${item.name}`}
-                          disabled={item.quantity >= getInventory(products.find((p) => p.id === item.id), item.selectedColor) || getInventory(products.find((p) => p.id === item.id), item.selectedColor) === 0}
                         >
                           +
                         </button>
@@ -2392,7 +2426,8 @@ const GIFTOWebsite = () => {
                       </button>
                     </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </section>
 

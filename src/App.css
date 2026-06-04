@@ -439,6 +439,9 @@
   margin: 0;
   font-size: 1.2rem;
   color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .best-seller-badge {
@@ -452,6 +455,7 @@
   text-transform: uppercase;
   letter-spacing: 0.02em;
   margin-left: 5.8rem;
+  white-space: nowrap;
 }
 
 .product-description {
