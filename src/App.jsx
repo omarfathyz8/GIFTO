@@ -52,7 +52,7 @@ const GIFTOWebsite = () => {
     category: "",
     price: "",
     inventory: "",
-    images: [],
+    colors: {},
     emoji: "",
     description: "",
   });
@@ -60,6 +60,10 @@ const GIFTOWebsite = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState({});
   const [showProfile, setShowProfile] = useState(false);
+  const [selectedColors, setSelectedColors] = useState({});
+  const [newColorName, setNewColorName] = useState("");
+  const [editingColorName, setEditingColorName] = useState("");
+  const [newProductColorName, setNewProductColorName] = useState("");
   const [editingProfile, setEditingProfile] = useState(null);
   const [cartLoaded, setCartLoaded] = useState(false);
   const [showRequestForm, setShowRequestForm] = useState(false);
@@ -85,9 +89,44 @@ const GIFTOWebsite = () => {
     "Medals",
     "Flowers",
     "Accessories",
+    "Notebooks",
+    "Mugs",
+    "Tech Accessories",
     "Decor",
     "Sets",
   ];
+
+  const colorMap = {
+    "black": "#000000",
+    "blue": "#0000ff",
+    "brown": "#a52a2a",
+    "cherry": "#de3163",
+    "coral": "#ff7f50",
+    "cream": "#fffdd0",
+    "gold": "#ffd700",
+    "gray": "#808080",
+    "grey": "#808080",
+    "green": "#008000",
+    "ivory": "#fffff0",
+    "lavender": "#e6e6fa",
+    "mint": "#98ff98",
+    "mint green": "#98ff98",
+    "navy": "#010157",
+    "orange": "#ff8800",
+    "pink": "#ffb6c1",
+    "purple": "#800080",
+    "red": "#ff0000",
+    "rose": "#ff007f",
+    "silver": "#c0c0c0",
+    "teal": "#008080",
+    "white": "#ffffff",
+    "yellow": "#ffff00",
+  };
+
+  const getColorValue = (colorName) => {
+    const lower = colorName.toLowerCase();
+    return colorMap[lower] || lower;
+  };
 
   const isAdmin = user?.email === "giftoo.storee@gmail.com";
   const isGuest = !user;
@@ -202,14 +241,31 @@ const GIFTOWebsite = () => {
         const value = snapshot.val();
         if (value) {
           const loadedProducts = Object.entries(value).map(
-            ([key, product]) => ({
-              dbKey: key,
-              id: product.id ?? (Number.isNaN(Number(key)) ? key : Number(key)),
-              ...product,
-              inventory: Number.isFinite(Number(product.inventory))
-                ? Number(product.inventory)
-                : 10,
-            }),
+            ([key, product]) => {
+              let colors = product.colors;
+              if (!colors) {
+                if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+                  colors = { "Default": { images: product.images, stock: product.inventory || 10 } };
+                } else {
+                  colors = {};
+                }
+              } else {
+                colors = Object.entries(colors).reduce((acc, [colorName, colorData]) => {
+                  if (Array.isArray(colorData)) {
+                    acc[colorName] = { images: colorData, stock: product.inventory || 10 };
+                  } else {
+                    acc[colorName] = colorData;
+                  }
+                  return acc;
+                }, {});
+              }
+              return {
+                dbKey: key,
+                id: product.id ?? (Number.isNaN(Number(key)) ? key : Number(key)),
+                ...product,
+                colors: colors || {},
+              };
+            },
           );
           loadedProducts.sort((a, b) => a.id - b.id);
           setProducts(loadedProducts);
@@ -384,11 +440,11 @@ const GIFTOWebsite = () => {
     setShowCheckout(true);
   };
 
-  const updateCartQuantity = (productId, delta = 0, newQuantity = null) => {
+  const updateCartQuantity = (productId, delta = 0, newQuantity = null, selectedColor = null) => {
     setCart((currentCart) =>
       currentCart
         .map((item) =>
-          item.id === productId
+          item.id === productId && item.selectedColor === selectedColor
             ? { ...item, quantity: newQuantity ?? item.quantity + delta }
             : item
         )
@@ -396,32 +452,42 @@ const GIFTOWebsite = () => {
     );
   };
 
-  const increaseCartQuantity = (productId) => {
+  const increaseCartQuantity = (productId, selectedColor = null) => {
     const product = products.find((p) => p.id === productId);
     if (!product) return;
-    const cartItem = cart.find((item) => item.id === productId);
+    const cartItem = cart.find((item) => item.id === productId && item.selectedColor === selectedColor);
     if (cartItem && cartItem.quantity >= getInventory(product)) {
       showToast("Not enough inventory available.", "error");
       return;
     }
-    updateCartQuantity(productId, 1);
+    updateCartQuantity(productId, 1, null, selectedColor);
   };
 
-  const decreaseCartQuantity = (productId) => updateCartQuantity(productId, -1);
+  const decreaseCartQuantity = (productId, selectedColor = null) => updateCartQuantity(productId, -1, null, selectedColor);
 
   const getProductQuantity = (productId) => {
-    const product = products.find((p) => p.id === productId);
-    if (product && getInventory(product) === 0) return 0;
     return productQuantities[productId] || 1;
   };
-  const getCartQuantity = (productId) => cart.find((item) => item.id === productId)?.quantity || 0;
-  const getInventory = (product) => Number.isFinite(Number(product.inventory)) ? Number(product.inventory) : 0;
-  const getAvailableInventory = (product) => Math.max(getInventory(product) - getCartQuantity(product.id), 0);
+  const getCartQuantity = (productId, selectedColor = null) => cart.find((item) => item.id === productId && item.selectedColor === selectedColor)?.quantity || 0;
+  const getInventory = (product, selectedColor = null) => {
+    if (!selectedColor) return 0;
+    const colors = product.colors || {};
+    const colorData = colors[selectedColor];
+    if (!colorData) return 0;
+    return Number.isFinite(Number(colorData.stock)) ? Number(colorData.stock) : 0;
+  };
+  const getAvailableInventory = (product, selectedColor = null) => {
+    if (!selectedColor) return 0;
+    const inventory = getInventory(product, selectedColor);
+    const cartQty = getCartQuantity(product.id, selectedColor);
+    return Math.max(inventory - cartQty, 0);
+  };
 
   const updateProductQuantity = (productId, delta, product = null) => {
     const current = getProductQuantity(productId);
     const newQty = Math.max(current + delta, 0);
-    const available = product ? getAvailableInventory(product) : Infinity;
+    const selectedColor = selectedColors[productId] || (product ? Object.keys(product.colors || {})[0] : null);
+    const available = product ? getAvailableInventory(product, selectedColor) : Infinity;
     if (newQty > available) return;
 
     setProductQuantities((prev) => ({ ...prev, [productId]: newQty }));
@@ -431,17 +497,19 @@ const GIFTOWebsite = () => {
   const decrementProductQuantity = (productId) => updateProductQuantity(productId, -1);
 
   const addToCart = (product, quantity = 1) => {
-    const available = getAvailableInventory(product);
+    const selectedColor = selectedColors[product.id] || Object.keys(product.colors || {})[0] || "Default";
+    const available = getAvailableInventory(product, selectedColor);
     if (available === 0) {
       showToast("Wait for a restock soon.", "error");
       return;
     }
     const quantityToAdd = Math.min(quantity, available);
-    const existingItem = cart.find((item) => item.id === product.id);
+    const cartItemKey = `${product.id}_${selectedColor}`;
+    const existingItem = cart.find((item) => item.id === product.id && item.selectedColor === selectedColor);
     if (existingItem) {
       setCart((currentCart) =>
         currentCart.map((item) =>
-          item.id === product.id
+          item.id === product.id && item.selectedColor === selectedColor
             ? { ...item, quantity: item.quantity + quantityToAdd }
             : item,
         ),
@@ -449,14 +517,14 @@ const GIFTOWebsite = () => {
     } else {
       setCart((currentCart) => [
         ...currentCart,
-        { ...product, quantity: quantityToAdd },
+        { ...product, quantity: quantityToAdd, selectedColor },
       ]);
     }
   };
 
-  const removeFromCart = (productId) => {
+  const removeFromCart = (productId, selectedColor = null) => {
     setCart((currentCart) =>
-      currentCart.filter((item) => item.id !== productId),
+      currentCart.filter((item) => !(item.id === productId && item.selectedColor === selectedColor)),
     );
   };
 
@@ -513,7 +581,7 @@ const GIFTOWebsite = () => {
     setToast({ message, type });
   };
 
-  const handleImageUpload = (event, isEditing = false) => {
+  const handleImageUpload = (event, isEditing = false, colorName = null) => {
     const files = event.target.files;
     if (!files || files.length === 0) {
       console.log("No file selected");
@@ -529,7 +597,7 @@ const GIFTOWebsite = () => {
         showToast(`Skipped ${file.name} - not an image file.`, "error");
         filesProcessed++;
         if (filesProcessed === files.length && newImages.length > 0) {
-          finishUpload(newImages, isEditing, event);
+          finishUpload(newImages, isEditing, event, colorName);
         }
         return;
       }
@@ -545,13 +613,13 @@ const GIFTOWebsite = () => {
           filesProcessed++;
 
           if (filesProcessed === files.length) {
-            finishUpload(newImages, isEditing, event);
+            finishUpload(newImages, isEditing, event, colorName);
           }
         } catch (error) {
           console.error("Error processing image:", error);
           filesProcessed++;
           if (filesProcessed === files.length && newImages.length > 0) {
-            finishUpload(newImages, isEditing, event);
+            finishUpload(newImages, isEditing, event, colorName);
           }
         }
       };
@@ -560,7 +628,7 @@ const GIFTOWebsite = () => {
         console.error("FileReader error:", error);
         filesProcessed++;
         if (filesProcessed === files.length && newImages.length > 0) {
-          finishUpload(newImages, isEditing, event);
+          finishUpload(newImages, isEditing, event, colorName);
         }
       };
 
@@ -568,7 +636,7 @@ const GIFTOWebsite = () => {
     });
   };
 
-  const finishUpload = (newImages, isEditing, event) => {
+  const finishUpload = (newImages, isEditing, event, colorName = null) => {
     if (newImages.length === 0) {
       showToast("Failed to upload any images.", "error");
       setUploadingImage(false);
@@ -577,15 +645,27 @@ const GIFTOWebsite = () => {
     }
 
     if (isEditing) {
-      setEditingProduct((prev) => ({
-        ...prev,
-        images: [...(prev.images || []), ...newImages],
-      }));
+      setEditingProduct((prev) => {
+        const colors = { ...prev.colors };
+        if (colorName) {
+          const currentColor = colors[colorName];
+          const currentImages = Array.isArray(currentColor) ? currentColor : (currentColor?.images || []);
+          const currentStock = currentColor?.stock ?? 0;
+          colors[colorName] = { images: [...currentImages, ...newImages], stock: currentStock };
+        }
+        return { ...prev, colors };
+      });
     } else {
-      setNewProduct((prev) => ({
-        ...prev,
-        images: [...(prev.images || []), ...newImages],
-      }));
+      setNewProduct((prev) => {
+        const colors = { ...prev.colors };
+        if (colorName) {
+          const currentColor = colors[colorName];
+          const currentImages = Array.isArray(currentColor) ? currentColor : (currentColor?.images || []);
+          const currentStock = currentColor?.stock ?? 0;
+          colors[colorName] = { images: [...currentImages, ...newImages], stock: currentStock };
+        }
+        return { ...prev, colors };
+      });
     }
 
     event.target.value = "";
@@ -643,15 +723,17 @@ const GIFTOWebsite = () => {
       return;
     }
 
+    if (Object.keys(newProduct.colors).length === 0) {
+      showToast("Add at least one color with images.", "error");
+      return;
+    }
+
     const productRef = push(dbRef(db, "products"));
     await set(productRef, {
       ...newProduct,
       id: Date.now(),
       price: Number(newProduct.price),
-      inventory: Number.isFinite(Number(newProduct.inventory))
-        ? Number(newProduct.inventory)
-        : 0,
-      images: newProduct.images || [],
+      colors: newProduct.colors || {},
       emoji: newProduct.emoji,
       description: newProduct.description || "",
     });
@@ -660,7 +742,7 @@ const GIFTOWebsite = () => {
       name: "",
       category: "",
       price: "",
-      images: [],
+      colors: {},
       emoji: "",
       description: "",
     });
@@ -709,6 +791,11 @@ const GIFTOWebsite = () => {
       return;
     }
 
+    if (Object.keys(editingProduct.colors || {}).length === 0) {
+      showToast("Add at least one color with images.", "error");
+      return;
+    }
+
     await update(dbRef(db, `products/${editingProduct.dbKey}`), {
       name: editingProduct.name,
       category: editingProduct.category,
@@ -716,7 +803,7 @@ const GIFTOWebsite = () => {
       inventory: Number.isFinite(Number(editingProduct.inventory))
         ? Number(editingProduct.inventory)
         : 0,
-      images: editingProduct.images || [],
+      colors: editingProduct.colors || {},
       emoji: editingProduct.emoji,
       description: editingProduct.description || "",
     });
@@ -993,7 +1080,7 @@ const GIFTOWebsite = () => {
     : "All";
 
   if (isAdmin) {
-    return <AdminDashboard user={user} handleSignOut={handleSignOut} />;
+    return <AdminDashboard user={user} handleSignOut={handleSignOut} categories={categories} />;
   }
 
   return (
@@ -1171,27 +1258,49 @@ const GIFTOWebsite = () => {
               const bestSellerName = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
 
               return filteredProducts.map((product) => {
-                const images = product.images || [];
+                const colors = product.colors || {};
+                const colorNames = Object.keys(colors);
+                const selectedColor = selectedColors[product.id] || colorNames[0];
+                const colorData = colors[selectedColor];
+                const images = (colorData?.images || []);
                 const currentIdx = currentImageIndex[product.id] || 0;
                 const currentImage = images[currentIdx];
                 const isBestSeller = product.name === bestSellerName;
 
                 return (
                 <article key={product.id} className="product-card">
-                  <div className="product-image">
-                    {currentImage && currentImage.startsWith("data:") ? (
-                      <>
-                        <img src={currentImage} alt={product.name} />
-                        {images.length > 1 && (
-                          <div className="image-indicator">
-                            {currentIdx + 1} / {images.length}
-                          </div>
-                        )}
-                      </>
-                    ) : product.emoji ? (
-                      <span className="product-emoji">{product.emoji}</span>
-                    ) : (
-                      <div className="no-image-placeholder">No image</div>
+                  <div className="product-image-wrapper">
+                    <div className="product-image">
+                      {currentImage && currentImage.startsWith("data:") ? (
+                        <>
+                          <img src={currentImage} alt={product.name} />
+                          {images.length > 1 && (
+                            <div className="image-indicator">
+                              {currentIdx + 1} / {images.length}
+                            </div>
+                          )}
+                        </>
+                      ) : product.emoji ? (
+                        <span className="product-emoji">{product.emoji}</span>
+                      ) : (
+                        <div className="no-image-placeholder">No image</div>
+                      )}
+                    </div>
+                    {colorNames.length > 0 && (
+                      <div className="color-circles">
+                        {colorNames.map((colorName) => (
+                          <button
+                            key={colorName}
+                            type="button"
+                            className={`color-circle ${selectedColor === colorName ? "active" : ""}`}
+                            onClick={() => setSelectedColors((prev) => ({ ...prev, [product.id]: colorName }))}
+                            title={colorName}
+                            style={{
+                              backgroundColor: getColorValue(colorName),
+                            }}
+                          />
+                        ))}
+                      </div>
                     )}
                   </div>
                 <div className="product-body">
@@ -1203,17 +1312,17 @@ const GIFTOWebsite = () => {
                   <p className="product-description">{product.description}</p>
                   <div className="product-meta">
                     <span className="product-price">{product.price} LE</span>
-                    {getAvailableInventory(product) > 5 ? null : (
+                    {getAvailableInventory(product, selectedColor) > 5 ? null : (
                       <span
                         className={`stock-status ${
-                          getAvailableInventory(product) === 0
+                          getAvailableInventory(product, selectedColor) === 0
                             ? "stock-out"
                             : "stock-low"
                         }`}
                       >
-                        {getAvailableInventory(product) === 0
+                        {getAvailableInventory(product, selectedColor) === 0
                           ? "Out of stock"
-                          : `Only ${getAvailableInventory(product)} left`}
+                          : `Only ${getAvailableInventory(product, selectedColor)} left`}
                       </span>
                     )}
                     {canUseCart && (
@@ -1265,7 +1374,7 @@ const GIFTOWebsite = () => {
                           aria-label={`Increase quantity of ${product.name}`}
                           disabled={
                             getProductQuantity(product.id) >=
-                            getAvailableInventory(product)
+                            getAvailableInventory(product, selectedColor)
                           }
                         >
                           +
@@ -1495,15 +1604,16 @@ const GIFTOWebsite = () => {
               <>
                 <div className="cart-items">
                   {cart.map((item) => (
-                    <div key={item.id} className="cart-item">
+                    <div key={`${item.id}_${item.selectedColor}`} className="cart-item">
                       <div>
                         <p className="cart-item-name">{item.name}</p>
+                        {item.selectedColor && <p className="cart-item-meta">Color: {item.selectedColor}</p>}
                         <p className="cart-item-meta">{item.price} LE each</p>
                         <div className="cart-item-quantity">
                           <button
                             type="button"
                             className="quantity-button"
-                            onClick={() => decreaseCartQuantity(item.id)}
+                            onClick={() => decreaseCartQuantity(item.id, item.selectedColor)}
                             aria-label={`Decrease quantity of ${item.name}`}
                           >
                             −
@@ -1514,9 +1624,9 @@ const GIFTOWebsite = () => {
                           <button
                             type="button"
                             className="quantity-button"
-                            onClick={() => increaseCartQuantity(item.id)}
+                            onClick={() => increaseCartQuantity(item.id, item.selectedColor)}
                             aria-label={`Increase quantity of ${item.name}`}
-                            disabled={item.quantity >= getInventory(products.find((p) => p.id === item.id)) || getInventory(products.find((p) => p.id === item.id)) === 0}
+                            disabled={item.quantity >= getInventory(products.find((p) => p.id === item.id), item.selectedColor) || getInventory(products.find((p) => p.id === item.id), item.selectedColor) === 0}
                           >
                             +
                           </button>
@@ -1529,7 +1639,7 @@ const GIFTOWebsite = () => {
                         <button
                           type="button"
                           className="cart-remove"
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeFromCart(item.id, item.selectedColor)}
                         >
                           Remove
                         </button>
@@ -1676,7 +1786,7 @@ const GIFTOWebsite = () => {
 
       {editingProduct && (
         <div className="overlay" role="dialog" aria-modal="true">
-          <div className="modal-card">
+          <div className="modal-card modal-scrollable">
             <button
               type="button"
               className="modal-close"
@@ -1746,25 +1856,6 @@ const GIFTOWebsite = () => {
                 />
               </label>
               <label className="admin-label">
-                Product Images (Multiple)
-                <div className="image-upload-container">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, true)}
-                    className="admin-input"
-                    disabled={uploadingImage}
-                    multiple
-                  />
-                  {uploadingImage && <span className="uploading-text">Uploading...</span>}
-                  {editingProduct.images && editingProduct.images.length > 0 && (
-                    <p className="image-count">
-                      {editingProduct.images.length} image{editingProduct.images.length !== 1 ? "s" : ""} added
-                    </p>
-                  )}
-                </div>
-              </label>
-              <label className="admin-label">
                 Emoji (if no image)
                 <input
                   value={editingProduct.emoji || ""}
@@ -1790,6 +1881,72 @@ const GIFTOWebsite = () => {
                   className="admin-textarea"
                 />
               </label>
+
+              <div className="admin-label">
+                <p style={{ marginBottom: "10px", fontWeight: "600" }}>Product Colors</p>
+                {Object.keys(editingProduct.colors || {}).map((colorName) => (
+                  <div key={colorName} style={{ marginBottom: "15px", padding: "10px", backgroundColor: "#f5f5f5", borderRadius: "4px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                      <p style={{ fontWeight: "500" }}>{colorName}</p>
+                      <button
+                        type="button"
+                        className="secondary-button small"
+                        onClick={() => {
+                          const newColors = { ...editingProduct.colors };
+                          delete newColors[colorName];
+                          setEditingProduct({ ...editingProduct, colors: newColors });
+                        }}
+                      >
+                        Remove Color
+                      </button>
+                    </div>
+                    <p style={{ fontSize: "12px", marginBottom: "8px" }}>
+                      {editingProduct.colors[colorName]?.length || 0} image{editingProduct.colors[colorName]?.length !== 1 ? "s" : ""}
+                    </p>
+                    <label className="admin-label">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, true, colorName)}
+                        className="admin-input"
+                        disabled={uploadingImage}
+                        multiple
+                      />
+                      {uploadingImage && <span className="uploading-text">Uploading...</span>}
+                    </label>
+                  </div>
+                ))}
+
+                <div style={{ marginTop: "15px", padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "4px" }}>
+                  <p style={{ marginBottom: "8px", fontWeight: "500" }}>Add New Color</p>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <input
+                      type="text"
+                      value={editingColorName}
+                      onChange={(e) => setEditingColorName(e.target.value)}
+                      placeholder="Color name (e.g., Red, Blue)"
+                      className="admin-input"
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      className="primary-button small"
+                      onClick={() => {
+                        if (editingColorName.trim()) {
+                          setEditingProduct({
+                            ...editingProduct,
+                            colors: { ...editingProduct.colors, [editingColorName]: [] },
+                          });
+                          setEditingColorName("");
+                        }
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div className="product-manager-form-actions">
                 <button type="submit" className="primary-button full-width">
                   Save changes
@@ -2151,9 +2308,10 @@ const GIFTOWebsite = () => {
                 <p className="empty-state">No items in cart.</p>
               ) : (
                 cart.map((item) => (
-                  <div key={item.id} className="checkout-item">
+                  <div key={`${item.id}_${item.selectedColor}`} className="checkout-item">
                     <div>
                       <p className="cart-item-name">{item.name}</p>
+                      {item.selectedColor && <p className="cart-item-meta">Color: {item.selectedColor}</p>}
                       <p className="cart-item-meta">{item.price} LE each</p>
                     </div>
                     <div className="checkout-item-actions">
@@ -2161,7 +2319,7 @@ const GIFTOWebsite = () => {
                         <button
                           type="button"
                           className="quantity-button"
-                          onClick={() => decreaseCartQuantity(item.id)}
+                          onClick={() => decreaseCartQuantity(item.id, item.selectedColor)}
                           aria-label={`Decrease quantity of ${item.name}`}
                         >
                           −
@@ -2170,9 +2328,9 @@ const GIFTOWebsite = () => {
                         <button
                           type="button"
                           className="quantity-button"
-                          onClick={() => increaseCartQuantity(item.id)}
+                          onClick={() => increaseCartQuantity(item.id, item.selectedColor)}
                           aria-label={`Increase quantity of ${item.name}`}
-                          disabled={item.quantity >= getInventory(products.find((p) => p.id === item.id)) || getInventory(products.find((p) => p.id === item.id)) === 0}
+                          disabled={item.quantity >= getInventory(products.find((p) => p.id === item.id), item.selectedColor) || getInventory(products.find((p) => p.id === item.id), item.selectedColor) === 0}
                         >
                           +
                         </button>
@@ -2183,7 +2341,7 @@ const GIFTOWebsite = () => {
                       <button
                         type="button"
                         className="cart-remove"
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={() => removeFromCart(item.id, item.selectedColor)}
                       >
                         Remove
                       </button>

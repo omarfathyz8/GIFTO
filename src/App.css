@@ -416,11 +416,6 @@
     box-shadow 0.25s ease;
 }
 
-.product-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 32px 100px rgba(71, 46, 21, 0.16);
-}
-
 .product-body {
   padding: 1.5rem;
 }
@@ -1081,13 +1076,35 @@
 }
 
 .admin-input,
-.admin-textarea {
+.admin-textarea,
+.admin-label select {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 1rem;
   padding: 0.9rem 1rem;
   background: var(--surface-soft);
   color: var(--text);
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-label select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235e2f07' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+.admin-label select:hover {
+  border-color: var(--accent);
+}
+
+.admin-label select:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .admin-textarea {
@@ -1196,6 +1213,7 @@
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .inventory-status {
@@ -1748,4 +1766,55 @@
 
 .request-card-header .order-meta {
   margin-top: 0.1rem !important;
+}
+
+.product-image-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: var(--surface-soft);
+}
+
+.color-circles {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.color-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: currentColor;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.color-circle:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.color-circle.active {
+  /* border-color: var(--accent); */
+  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent);
+  transform: scale(1.1);
+}
+
+.modal-scrollable {
+  max-height: 90vh;
+  overflow-y: auto;
 }

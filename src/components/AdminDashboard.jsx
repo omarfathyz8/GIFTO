@@ -17,7 +17,7 @@ import ManageInventory from "./admin/ManageInventory";
 import ManageOrders from "./admin/ManageOrders";
 import "../App.css";
 
-const AdminDashboard = ({ user, handleSignOut }) => {
+const AdminDashboard = ({ user, handleSignOut, categories }) => {
   const [products, setProducts] = useState([]);
   const [allOrders, setAllOrders] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -27,7 +27,7 @@ const AdminDashboard = ({ user, handleSignOut }) => {
     category: "",
     price: "",
     inventory: "",
-    images: [],
+    colors: {},
     emoji: "",
     description: "",
   });
@@ -36,6 +36,7 @@ const AdminDashboard = ({ user, handleSignOut }) => {
   const [toast, setToast] = useState(null);
   const [editingDeliveryTime, setEditingDeliveryTime] = useState(null);
   const [deliveryTimeInput, setDeliveryTimeInput] = useState("");
+  const [editingColorName, setEditingColorName] = useState("");
 
   useEffect(() => {
     const productsRef = dbRef(db, "products");
@@ -45,14 +46,31 @@ const AdminDashboard = ({ user, handleSignOut }) => {
         const value = snapshot.val();
         if (value) {
           const loadedProducts = Object.entries(value).map(
-            ([key, product]) => ({
-              dbKey: key,
-              id: product.id ?? (Number.isNaN(Number(key)) ? key : Number(key)),
-              ...product,
-              inventory: Number.isFinite(Number(product.inventory))
-                ? Number(product.inventory)
-                : 10,
-            }),
+            ([key, product]) => {
+              let colors = product.colors;
+              if (!colors) {
+                if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+                  colors = { "Default": { images: product.images, stock: product.inventory || 10 } };
+                } else {
+                  colors = {};
+                }
+              } else {
+                colors = Object.entries(colors).reduce((acc, [colorName, colorData]) => {
+                  if (Array.isArray(colorData)) {
+                    acc[colorName] = { images: colorData, stock: product.inventory || 10 };
+                  } else {
+                    acc[colorName] = colorData;
+                  }
+                  return acc;
+                }, {});
+              }
+              return {
+                dbKey: key,
+                id: product.id ?? (Number.isNaN(Number(key)) ? key : Number(key)),
+                ...product,
+                colors: colors || {},
+              };
+            },
           );
           loadedProducts.sort((a, b) => a.id - b.id);
           setProducts(loadedProducts);
@@ -175,7 +193,7 @@ const AdminDashboard = ({ user, handleSignOut }) => {
     showToast(`Request status updated to ${status}.`, "success");
   };
 
-  const handleImageUpload = (event, isEditing = false) => {
+  const handleImageUpload = (event, isEditing = false, colorName = null) => {
     const files = event.target.files;
     if (!files || files.length === 0) {
       console.log("No file selected");
@@ -191,7 +209,7 @@ const AdminDashboard = ({ user, handleSignOut }) => {
         showToast(`Skipped ${file.name} - not an image file.`, "error");
         filesProcessed++;
         if (filesProcessed === files.length && newImages.length > 0) {
-          finishUpload(newImages, isEditing, event);
+          finishUpload(newImages, isEditing, event, colorName);
         }
         return;
       }
@@ -207,13 +225,13 @@ const AdminDashboard = ({ user, handleSignOut }) => {
           filesProcessed++;
 
           if (filesProcessed === files.length) {
-            finishUpload(newImages, isEditing, event);
+            finishUpload(newImages, isEditing, event, colorName);
           }
         } catch (error) {
           console.error("Error processing image:", error);
           filesProcessed++;
           if (filesProcessed === files.length && newImages.length > 0) {
-            finishUpload(newImages, isEditing, event);
+            finishUpload(newImages, isEditing, event, colorName);
           }
         }
       };
@@ -222,7 +240,7 @@ const AdminDashboard = ({ user, handleSignOut }) => {
         console.error("FileReader error:", error);
         filesProcessed++;
         if (filesProcessed === files.length && newImages.length > 0) {
-          finishUpload(newImages, isEditing, event);
+          finishUpload(newImages, isEditing, event, colorName);
         }
       };
 
@@ -230,7 +248,7 @@ const AdminDashboard = ({ user, handleSignOut }) => {
     });
   };
 
-  const finishUpload = (newImages, isEditing, event) => {
+  const finishUpload = (newImages, isEditing, event, colorName = null) => {
     if (newImages.length === 0) {
       showToast("Failed to upload any images.", "error");
       setUploadingImage(false);
@@ -239,15 +257,37 @@ const AdminDashboard = ({ user, handleSignOut }) => {
     }
 
     if (isEditing) {
-      setEditingProduct((prev) => ({
-        ...prev,
-        images: [...(prev.images || []), ...newImages],
-      }));
+      setEditingProduct((prev) => {
+        const colors = { ...prev.colors };
+        if (colorName) {
+          const colorData = colors[colorName];
+          if (Array.isArray(colorData)) {
+            colors[colorName] = { images: [...colorData, ...newImages], stock: 0 };
+          } else {
+            colors[colorName] = {
+              ...colorData,
+              images: [...(colorData?.images || []), ...newImages],
+            };
+          }
+        }
+        return { ...prev, colors };
+      });
     } else {
-      setNewProduct((prev) => ({
-        ...prev,
-        images: [...(prev.images || []), ...newImages],
-      }));
+      setNewProduct((prev) => {
+        const colors = { ...prev.colors };
+        if (colorName) {
+          const colorData = colors[colorName];
+          if (Array.isArray(colorData)) {
+            colors[colorName] = { images: [...colorData, ...newImages], stock: 0 };
+          } else {
+            colors[colorName] = {
+              ...colorData,
+              images: [...(colorData?.images || []), ...newImages],
+            };
+          }
+        }
+        return { ...prev, colors };
+      });
     }
 
     event.target.value = "";
@@ -267,6 +307,11 @@ const AdminDashboard = ({ user, handleSignOut }) => {
       return;
     }
 
+    if (Object.keys(newProduct.colors).length === 0) {
+      showToast("Add at least one color with images.", "error");
+      return;
+    }
+
     const productRef = push(dbRef(db, "products"));
     await set(productRef, {
       ...newProduct,
@@ -275,7 +320,7 @@ const AdminDashboard = ({ user, handleSignOut }) => {
       inventory: Number.isFinite(Number(newProduct.inventory))
         ? Number(newProduct.inventory)
         : 0,
-      images: newProduct.images || [],
+      colors: newProduct.colors || {},
       emoji: newProduct.emoji,
       description: newProduct.description || "",
     });
@@ -284,7 +329,7 @@ const AdminDashboard = ({ user, handleSignOut }) => {
       name: "",
       category: "",
       price: "",
-      images: [],
+      colors: {},
       emoji: "",
       description: "",
     });
@@ -333,6 +378,11 @@ const AdminDashboard = ({ user, handleSignOut }) => {
       return;
     }
 
+    if (Object.keys(editingProduct.colors || {}).length === 0) {
+      showToast("Add at least one color with images.", "error");
+      return;
+    }
+
     await update(dbRef(db, `products/${editingProduct.dbKey}`), {
       name: editingProduct.name,
       category: editingProduct.category,
@@ -340,7 +390,7 @@ const AdminDashboard = ({ user, handleSignOut }) => {
       inventory: Number.isFinite(Number(editingProduct.inventory))
         ? Number(editingProduct.inventory)
         : 0,
-      images: editingProduct.images || [],
+      colors: editingProduct.colors || {},
       emoji: editingProduct.emoji,
       description: editingProduct.description || "",
     });
@@ -480,6 +530,7 @@ const AdminDashboard = ({ user, handleSignOut }) => {
           handleCancelEditProduct={handleCancelEditProduct}
           handleUpdateProduct={handleUpdateProduct}
           handleDeleteProduct={handleDeleteProduct}
+          categories={categories}
         />
 
         <ManageRequests
@@ -551,62 +602,121 @@ const AdminDashboard = ({ user, handleSignOut }) => {
                   className="admin-input"
                 />
               </label>
-              <label className="admin-label">
-                Stock quantity
-                <input
-                  type="number"
-                  min="0"
-                  value={editingProduct.inventory ?? ""}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      inventory: e.target.value,
-                    })
-                  }
-                  required
-                  className="admin-input"
-                />
-              </label>
-              <label className="admin-label">
-                Product Images (Multiple)
-                <div className="image-upload-container">
-                  {editingProduct.images && editingProduct.images.length > 0 && (
-                    <div className="image-preview-list">
-                      {editingProduct.images.map((img, idx) => (
-                        <div key={idx} className="image-preview-item">
-                          <img src={img} alt={`Preview ${idx + 1}`} />
-                          <button
-                            type="button"
-                            className="remove-image-btn"
-                            onClick={() =>
-                              setEditingProduct((prev) => ({
-                                ...prev,
-                                images: prev.images.filter((_, i) => i !== idx),
-                              }))
-                            }
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
+              <div className="admin-label">
+                <p style={{ marginBottom: "10px", fontWeight: "600" }}>Product Colors</p>
+                {Object.keys(editingProduct.colors || {}).map((colorName) => (
+                  <div key={colorName} style={{ marginBottom: "15px", padding: "10px", backgroundColor: "#f5f5f5", borderRadius: "4px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                      <p style={{ fontWeight: "500" }}>{colorName}</p>
+                      <button
+                        type="button"
+                        className="secondary-button small"
+                        onClick={() => {
+                          const newColors = { ...editingProduct.colors };
+                          delete newColors[colorName];
+                          setEditingProduct({ ...editingProduct, colors: newColors });
+                        }}
+                      >
+                        Remove Color
+                      </button>
                     </div>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, true)}
-                    className="admin-input"
-                    disabled={uploadingImage}
-                    multiple
-                  />
-                  {uploadingImage && <span className="uploading-text">Uploading...</span>}
-                  {editingProduct.images && editingProduct.images.length > 0 && (
-                    <p className="image-count">
-                      {editingProduct.images.length} image{editingProduct.images.length !== 1 ? "s" : ""} added
+                    <label className="admin-label" style={{ marginBottom: "10px" }}>
+                      Stock for {colorName}
+                      <input
+                        type="number"
+                        min="0"
+                        value={editingProduct.colors[colorName]?.stock ?? ""}
+                        onChange={(e) =>
+                          setEditingProduct((prev) => ({
+                            ...prev,
+                            colors: {
+                              ...prev.colors,
+                              [colorName]: {
+                                ...prev.colors[colorName],
+                                stock: e.target.value === "" ? 0 : Number(e.target.value),
+                              },
+                            },
+                          }))
+                        }
+                        className="admin-input"
+                      />
+                    </label>
+                    <p style={{ fontSize: "12px", marginBottom: "8px" }}>
+                      {Array.isArray(editingProduct.colors[colorName]) ? editingProduct.colors[colorName].length : editingProduct.colors[colorName]?.images?.length || 0} image{(Array.isArray(editingProduct.colors[colorName]) ? editingProduct.colors[colorName].length : editingProduct.colors[colorName]?.images?.length || 0) !== 1 ? "s" : ""}
                     </p>
-                  )}
+                    {editingProduct.colors[colorName]?.images && editingProduct.colors[colorName].images.length > 0 && (
+                      <div className="image-preview-list">
+                        {editingProduct.colors[colorName].images.map((img, idx) => (
+                          <div key={idx} className="image-preview-item">
+                            <img src={img} alt={`${colorName} ${idx + 1}`} />
+                            <button
+                              type="button"
+                              className="remove-image-btn"
+                              onClick={() =>
+                                setEditingProduct((prev) => ({
+                                  ...prev,
+                                  colors: {
+                                    ...prev.colors,
+                                    [colorName]: {
+                                      ...prev.colors[colorName],
+                                      images: prev.colors[colorName].images.filter((_, i) => i !== idx),
+                                    },
+                                  },
+                                }))
+                              }
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <label className="admin-label">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, true, colorName)}
+                        className="admin-input"
+                        disabled={uploadingImage}
+                        multiple
+                      />
+                      {uploadingImage && <span className="uploading-text">Uploading...</span>}
+                    </label>
+                  </div>
+                ))}
+
+                <div style={{ marginTop: "15px", padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "4px" }}>
+                  <p style={{ marginBottom: "8px", fontWeight: "500" }}>Add New Color</p>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <input
+                      type="text"
+                      value={editingColorName}
+                      onChange={(e) => setEditingColorName(e.target.value)}
+                      placeholder="Color name (e.g., Red, Blue)"
+                      className="admin-input"
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      className="primary-button small"
+                      onClick={() => {
+                        if (editingColorName.trim()) {
+                          setEditingProduct({
+                            ...editingProduct,
+                            colors: {
+                              ...editingProduct.colors,
+                              [editingColorName]: { images: [], stock: 0 }
+                            },
+                          });
+                          setEditingColorName("");
+                        }
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
                 </div>
-              </label>
+              </div>
               <label className="admin-label">
                 Emoji (if no image)
                 <input

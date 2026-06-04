@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { X, Upload } from "lucide-react";
 
 const ManageInventory = ({
@@ -14,7 +14,10 @@ const ManageInventory = ({
   handleCancelEditProduct,
   handleUpdateProduct,
   handleDeleteProduct,
+  categories,
 }) => {
+  const [newColorName, setNewColorName] = useState("");
+  const [editingColorName, setEditingColorName] = useState("");
   return (
     <section className="admin-section">
       <div className="section-title-row centered">
@@ -40,7 +43,7 @@ const ManageInventory = ({
             </label>
             <label className="admin-label">
               Category
-              <input
+              <select
                 value={newProduct.category}
                 onChange={(e) =>
                   setNewProduct({
@@ -50,7 +53,14 @@ const ManageInventory = ({
                 }
                 required
                 className="admin-input"
-              />
+              >
+                <option value="">Select a category</option>
+                {categories && categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="admin-label">
               Price (LE)
@@ -64,62 +74,121 @@ const ManageInventory = ({
                 className="admin-input"
               />
             </label>
-            <label className="admin-label">
-              Stock quantity
-              <input
-                type="number"
-                min="0"
-                value={newProduct.inventory}
-                onChange={(e) =>
-                  setNewProduct({
-                    ...newProduct,
-                    inventory: e.target.value,
-                  })
-                }
-                required
-                className="admin-input"
-              />
-            </label>
-            <label className="admin-label">
-              Product Images (Multiple)
-              <div className="image-upload-container">
-                {newProduct.images && newProduct.images.length > 0 && (
-                  <div className="image-preview-list">
-                    {newProduct.images.map((img, idx) => (
-                      <div key={idx} className="image-preview-item">
-                        <img src={img} alt={`Preview ${idx + 1}`} />
-                        <button
-                          type="button"
-                          className="remove-image-btn"
-                          onClick={() =>
-                            setNewProduct((prev) => ({
-                              ...prev,
-                              images: prev.images.filter((_, i) => i !== idx),
-                            }))
-                          }
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+            <div className="admin-label">
+              <p style={{ marginBottom: "10px", fontWeight: "600" }}>Product Colors</p>
+              {Object.keys(newProduct.colors || {}).map((colorName) => (
+                <div key={colorName} style={{ marginBottom: "15px", padding: "10px", backgroundColor: "#f5f5f5", borderRadius: "4px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                    <p style={{ fontWeight: "500" }}>{colorName}</p>
+                    <button
+                      type="button"
+                      className="secondary-button small"
+                      onClick={() => {
+                        const newColors = { ...newProduct.colors };
+                        delete newColors[colorName];
+                        setNewProduct({ ...newProduct, colors: newColors });
+                      }}
+                    >
+                      Remove Color
+                    </button>
                   </div>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e, false)}
-                  className="admin-input"
-                  disabled={uploadingImage}
-                  multiple
-                />
-                {uploadingImage && <span className="uploading-text">Uploading...</span>}
-                {newProduct.images && newProduct.images.length > 0 && (
-                  <p className="image-count">
-                    {newProduct.images.length} image{newProduct.images.length !== 1 ? "s" : ""} added
+                  <label className="admin-label" style={{ marginBottom: "10px" }}>
+                    Stock for {colorName}
+                    <input
+                      type="number"
+                      min="0"
+                      value={newProduct.colors[colorName]?.stock ?? ""}
+                      onChange={(e) =>
+                        setNewProduct((prev) => ({
+                          ...prev,
+                          colors: {
+                            ...prev.colors,
+                            [colorName]: {
+                              ...prev.colors[colorName],
+                              stock: e.target.value === "" ? 0 : Number(e.target.value),
+                            },
+                          },
+                        }))
+                      }
+                      className="admin-input"
+                    />
+                  </label>
+                  <p style={{ fontSize: "12px", marginBottom: "8px" }}>
+                    {Array.isArray(newProduct.colors[colorName]) ? newProduct.colors[colorName].length : newProduct.colors[colorName]?.images?.length || 0} image{(Array.isArray(newProduct.colors[colorName]) ? newProduct.colors[colorName].length : newProduct.colors[colorName]?.images?.length || 0) !== 1 ? "s" : ""}
                   </p>
-                )}
+                  {newProduct.colors[colorName]?.images && newProduct.colors[colorName].images.length > 0 && (
+                    <div className="image-preview-list">
+                      {newProduct.colors[colorName].images.map((img, idx) => (
+                        <div key={idx} className="image-preview-item">
+                          <img src={img} alt={`${colorName} ${idx + 1}`} />
+                          <button
+                            type="button"
+                            className="remove-image-btn"
+                            onClick={() =>
+                              setNewProduct((prev) => ({
+                                ...prev,
+                                colors: {
+                                  ...prev.colors,
+                                  [colorName]: {
+                                    ...prev.colors[colorName],
+                                    images: prev.colors[colorName].images.filter((_, i) => i !== idx),
+                                  },
+                                },
+                              }))
+                            }
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <label className="admin-label">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, false, colorName)}
+                      className="admin-input"
+                      disabled={uploadingImage}
+                      multiple
+                    />
+                    {uploadingImage && <span className="uploading-text">Uploading...</span>}
+                  </label>
+                </div>
+              ))}
+
+              <div style={{ marginTop: "15px", padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "4px" }}>
+                <p style={{ marginBottom: "8px", fontWeight: "500" }}>Add New Color</p>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input
+                    type="text"
+                    value={newColorName}
+                    onChange={(e) => setNewColorName(e.target.value)}
+                    placeholder="Color name (e.g., Red, Blue)"
+                    className="admin-input"
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="primary-button small"
+                    onClick={() => {
+                      if (newColorName.trim()) {
+                        setNewProduct({
+                          ...newProduct,
+                          colors: {
+                            ...newProduct.colors,
+                            [newColorName]: { images: [], stock: 0 }
+                          },
+                        });
+                        setNewColorName("");
+                      }
+                    }}
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
-            </label>
+            </div>
             <label className="admin-label">
               Emoji (if no image)
               <input
@@ -156,17 +225,25 @@ const ManageInventory = ({
               <div key={product.id} className="product-manager-card">
                 <div>
                   <p className="product-title">{product.name}</p>
-                  <p
-                    className={`product-meta inventory-status ${
-                      product.inventory === 0
-                        ? "inventory-out"
-                        : product.inventory <= 5
-                          ? "inventory-low"
-                          : "inventory-good"
-                    }`}
-                  >
-                    Stock: {product.inventory}
-                  </p>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    {Object.entries(product.colors || {}).map(([colorName, colorData]) => {
+                      const stock = colorData?.stock ?? 0;
+                      return (
+                        <p
+                          key={colorName}
+                          className={`product-meta inventory-status ${
+                            stock === 0
+                              ? "inventory-out"
+                              : stock <= 5
+                                ? "inventory-low"
+                                : "inventory-good"
+                          }`}
+                        >
+                          {colorName}: {stock}
+                        </p>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="product-manager-actions">
                   <button
@@ -247,41 +324,121 @@ const ManageInventory = ({
                   className="admin-input"
                 />
               </label>
-              <label className="admin-label">
-                Stock quantity
-                <input
-                  type="number"
-                  min="0"
-                  value={editingProduct.inventory ?? ""}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      inventory: e.target.value,
-                    })
-                  }
-                  required
-                  className="admin-input"
-                />
-              </label>
-              <label className="admin-label">
-                Product Images (Multiple)
-                <div className="image-upload-container">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, true)}
-                    className="admin-input"
-                    disabled={uploadingImage}
-                    multiple
-                  />
-                  {uploadingImage && <span className="uploading-text">Uploading...</span>}
-                  {editingProduct.images && editingProduct.images.length > 0 && (
-                    <p className="image-count">
-                      {editingProduct.images.length} image{editingProduct.images.length !== 1 ? "s" : ""} added
+              <div className="admin-label">
+                <p style={{ marginBottom: "10px", fontWeight: "600" }}>Product Colors & Stock</p>
+                {Object.keys(editingProduct.colors || {}).map((colorName) => (
+                  <div key={colorName} style={{ marginBottom: "15px", padding: "10px", backgroundColor: "#f5f5f5", borderRadius: "4px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                      <p style={{ fontWeight: "500" }}>{colorName}</p>
+                      <button
+                        type="button"
+                        className="secondary-button small"
+                        onClick={() => {
+                          const newColors = { ...editingProduct.colors };
+                          delete newColors[colorName];
+                          setEditingProduct({ ...editingProduct, colors: newColors });
+                        }}
+                      >
+                        Remove Color
+                      </button>
+                    </div>
+                    <label className="admin-label" style={{ marginBottom: "10px" }}>
+                      Stock for {colorName}
+                      <input
+                        type="number"
+                        min="0"
+                        value={editingProduct.colors[colorName]?.stock ?? ""}
+                        onChange={(e) =>
+                          setEditingProduct((prev) => ({
+                            ...prev,
+                            colors: {
+                              ...prev.colors,
+                              [colorName]: {
+                                ...prev.colors[colorName],
+                                stock: e.target.value === "" ? 0 : Number(e.target.value),
+                              },
+                            },
+                          }))
+                        }
+                        className="admin-input"
+                      />
+                    </label>
+                    <p style={{ fontSize: "12px", marginBottom: "8px" }}>
+                      {editingProduct.colors[colorName]?.images?.length || 0} image{(editingProduct.colors[colorName]?.images?.length || 0) !== 1 ? "s" : ""}
                     </p>
-                  )}
+                    {editingProduct.colors[colorName]?.images && editingProduct.colors[colorName].images.length > 0 && (
+                      <div className="image-preview-list">
+                        {editingProduct.colors[colorName].images.map((img, idx) => (
+                          <div key={idx} className="image-preview-item">
+                            <img src={img} alt={`${colorName} ${idx + 1}`} />
+                            <button
+                              type="button"
+                              className="remove-image-btn"
+                              onClick={() =>
+                                setEditingProduct((prev) => ({
+                                  ...prev,
+                                  colors: {
+                                    ...prev.colors,
+                                    [colorName]: {
+                                      ...prev.colors[colorName],
+                                      images: prev.colors[colorName].images.filter((_, i) => i !== idx),
+                                    },
+                                  },
+                                }))
+                              }
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <label className="admin-label">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, true, colorName)}
+                        className="admin-input"
+                        disabled={uploadingImage}
+                        multiple
+                      />
+                      {uploadingImage && <span className="uploading-text">Uploading...</span>}
+                    </label>
+                  </div>
+                ))}
+
+                <div style={{ marginTop: "15px", padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "4px" }}>
+                  <p style={{ marginBottom: "8px", fontWeight: "500" }}>Add New Color</p>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <input
+                      type="text"
+                      value={editingColorName}
+                      onChange={(e) => setEditingColorName(e.target.value)}
+                      placeholder="Color name (e.g., Red, Blue)"
+                      className="admin-input"
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      className="primary-button small"
+                      onClick={() => {
+                        if (editingColorName.trim()) {
+                          setEditingProduct({
+                            ...editingProduct,
+                            colors: {
+                              ...editingProduct.colors,
+                              [editingColorName]: { images: [], stock: 0 }
+                            },
+                          });
+                          setEditingColorName("");
+                        }
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
                 </div>
-              </label>
+              </div>
               <label className="admin-label">
                 Emoji (if no image)
                 <input
