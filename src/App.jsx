@@ -1085,9 +1085,10 @@ const GIFTOWebsite = () => {
   const filteredProducts = products
     .filter((product) => {
       const query = searchQuery.toLowerCase();
+      const productCat = product.category.toLowerCase();
       const matchesSearch = (
         product.name.toLowerCase().includes(query) ||
-        product.category.toLowerCase().includes(query)
+        productCat === query
       );
       const matchesBudget = !budgetLimit || product.price <= Number(budgetLimit);
       return matchesSearch && matchesBudget;
