@@ -370,6 +370,7 @@ export const sendRequestConfirmationEmail = async (requestData) => {
       <p><strong>Item Name:</strong> ${requestData.itemName}</p>
       ${requestData.category ? `<p><strong>Category:</strong> ${requestData.category}</p>` : ""}
       ${requestData.description ? `<p><strong>Description:</strong> ${requestData.description}</p>` : ""}
+      ${requestData.budgetMin || requestData.budgetMax ? `<p><strong>Budget Range:</strong> ${requestData.budgetMin || "No minimum"} - ${requestData.budgetMax || "No maximum"} LE</p>` : ""}
 
       <h3>What's Next?</h3>
       <p>Our team will review your request and get back to you.</p>
@@ -429,6 +430,7 @@ export const sendRequestAdminNotification = async (requestData) => {
       <p><strong>Category:</strong> ${requestData.category || "Not specified"}</p>
       <p><strong>Customer Email:</strong> <a href="mailto:${requestData.email}">${requestData.email}</a></p>
       ${requestData.description ? `<p><strong>Description:</strong> ${requestData.description}</p>` : ""}
+      ${requestData.budgetMin || requestData.budgetMax ? `<p><strong>Budget Range:</strong> ${requestData.budgetMin || "No minimum"} - ${requestData.budgetMax || "No maximum"} LE</p>` : ""}
       <p><strong>Current Status:</strong> ${requestData.status || "pending"}</p>
       <p>You can update the status of this request in the admin dashboard.</p>
     `;
