@@ -791,13 +791,13 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
                   className="admin-input"
                 />
               </label>
-              <div className="form-actions">
-                <button type="submit" className="primary-button full-width">
+              <div className="delivery-form-actions">
+                <button type="submit" className="primary-button">
                   Update Delivery Time
                 </button>
                 <button
                   type="button"
-                  className="secondary-button full-width"
+                  className="secondary-button"
                   onClick={() => {
                     setEditingDeliveryTime(null);
                     setDeliveryTimeInput("");

@@ -886,13 +886,15 @@ const GIFTOWebsite = () => {
     for (const item of order.items) {
       const product = products.find((p) => p.id === item.id);
       if (product && product.dbKey) {
-        const newInventory =
-          (Number(product.inventory) || 0) + item.quantity;
-        await update(dbRef(db, `products/${product.dbKey}`), {
-          inventory: newInventory,
-        });
-      }
-    }
+        const selectedColor = item.selectedColor;
+        if (selectedColor && product.colors && product.colors[selectedColor]) {
+          const currentStock = Number(product.colors[selectedColor].stock) || 0;
+          const newStock = currentStock + item.quantity;
+          await update(dbRef(db, `products/${product.dbKey}/colors/${selectedColor}`), {
+            stock: newStock,
+          });
+        }
+      }}
 
     sendCancellationEmail(order, user.email);
     sendCancellationAdminNotification(order, user.email);

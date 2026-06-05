@@ -11,6 +11,24 @@ const OrderCard = ({ order, showDeliveryEdit = false, onDeliveryEdit = null, onS
         <p className="order-meta">
           {order.name} | {order.phone} | {order.address}
         </p>
+        <p className="order-summary-text">
+          {order.items.length > 0
+            ? order.items.map((item) => `${item.selectedColor || 'default'} ${item.name} (x${item.quantity})`).join(", ")
+            : "No items"}
+        </p>
+        {order.deliveryTime && !showDeliveryEdit && (
+          <p className="order-meta">
+            {order.status === "delivered" ? "Delivered" : "Delivery"} on {new Date(order.deliveryTime).toLocaleString()}
+          </p>
+        )}
+        {order.giftBag && (
+          <p className="order-summary-text">Gift bag: Yes</p>
+        )}
+        {order.cardMessage && (
+          <p className="order-summary-text">
+            Message card: {order.cardMessage}
+          </p>
+        )}
         {order.deliveryTime && showDeliveryEdit && (
           <div className="order-meta-with-edit">
             <p className="order-meta">
@@ -26,29 +44,11 @@ const OrderCard = ({ order, showDeliveryEdit = false, onDeliveryEdit = null, onS
             </button>
           </div>
         )}
-        {order.deliveryTime && !showDeliveryEdit && (
-          <p className="order-meta">
-            {order.status === "delivered" ? "Delivered" : "Delivery"} on {new Date(order.deliveryTime).toLocaleString()}
-          </p>
-        )}
       </div>
       <span className={`order-status status-${order.status || "pending"}`}>
         {order.status || "pending"}
       </span>
     </div>
-    {order.giftWrap && (
-      <p className="order-summary-text">Gift wrap: Yes</p>
-    )}
-    {order.cardMessage && (
-      <p className="order-summary-text">
-        Message card: {order.cardMessage}
-      </p>
-    )}
-    <p className="order-summary-text">
-      {order.items.length > 0
-        ? order.items.map((item) => item.name).join(", ")
-        : "No items"}
-    </p>
     {showStatusActions && statuses.length > 0 && (
       <div className="status-actions">
         {statuses.map((status) => (
@@ -87,102 +87,92 @@ const ManageOrders = ({
         </div>
       </div>
 
-      <div className="admin-inventory-grid">
-        <div className="admin-card">
-          <h3>Pending Orders</h3>
-          {allOrders.filter(o => o.status === "pending" || !o.status).length === 0 ? (
-            <p className="loading-state">No pending orders.</p>
-          ) : (
-            allOrders
-              .filter(o => o.status === "pending" || !o.status)
-              .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
-              .map((order) => (
-                <OrderCard
-                  key={order.dbKey}
-                  order={order}
-                  showDeliveryEdit={true}
-                  onDeliveryEdit={handleDeliveryEdit}
-                  showStatusActions={true}
-                  statuses={["pending", "processing", "shipped", "delivered"]}
-                  onStatusChange={updateOrderStatus}
-                />
-              ))
-          )}
-        </div>
-
-        <div className="admin-card">
-          <h3>Processing Orders</h3>
-          {allOrders.filter(o => o.status === "processing").length === 0 ? (
-            <p className="loading-state">No processing orders.</p>
-          ) : (
-            allOrders
-              .filter(o => o.status === "processing")
-              .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
-              .map((order) => (
-                <OrderCard
-                  key={order.dbKey}
-                  order={order}
-                  showDeliveryEdit={true}
-                  onDeliveryEdit={handleDeliveryEdit}
-                  showStatusActions={true}
-                  statuses={["pending", "processing", "shipped", "delivered"]}
-                  onStatusChange={updateOrderStatus}
-                />
-              ))
-          )}
-        </div>
+      <div className="admin-card">
+        <h3>Pending Orders</h3>
+        {allOrders.filter(o => o.status === "pending" || !o.status).length === 0 ? (
+          <p className="loading-state">No pending orders.</p>
+        ) : (
+          allOrders
+            .filter(o => o.status === "pending" || !o.status)
+            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+            .map((order) => (
+              <OrderCard
+                key={order.dbKey}
+                order={order}
+                showDeliveryEdit={true}
+                onDeliveryEdit={handleDeliveryEdit}
+                showStatusActions={true}
+                statuses={["pending", "processing", "shipped", "delivered"]}
+                onStatusChange={updateOrderStatus}
+              />
+            ))
+        )}
       </div>
 
       <div className="admin-card">
-        <h3>Shipped & Delivered Orders</h3>
-        {allOrders.filter(o => o.status === "shipped" || o.status === "delivered").length === 0 ? (
-          <p className="loading-state">No shipped or delivered orders yet.</p>
+        <h3>Processing Orders</h3>
+        {allOrders.filter(o => o.status === "processing").length === 0 ? (
+          <p className="loading-state">No processing orders.</p>
         ) : (
-          (() => {
-            const statusOrder = {
-              shipped: 1,
-              delivered: 2,
-            };
-            return allOrders
-              .filter(o => o.status === "shipped" || o.status === "delivered")
-              .sort((a, b) => {
-                const statusDiff = (statusOrder[a.status] || 4) - (statusOrder[b.status] || 4);
-                if (statusDiff !== 0) return statusDiff;
-                return (b.createdAt || 0) - (a.createdAt || 0);
-              })
+          allOrders
+            .filter(o => o.status === "processing")
+            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+            .map((order) => (
+              <OrderCard
+                key={order.dbKey}
+                order={order}
+                showDeliveryEdit={true}
+                onDeliveryEdit={handleDeliveryEdit}
+                showStatusActions={true}
+                statuses={["pending", "processing", "shipped", "delivered"]}
+                onStatusChange={updateOrderStatus}
+              />
+            ))
+        )}
+      </div>
+
+      <div className="admin-inventory-grid">
+        <div className="admin-card">
+          <h3>Shipped Orders</h3>
+          {allOrders.filter(o => o.status === "shipped").length === 0 ? (
+            <p className="loading-state">No shipped orders.</p>
+          ) : (
+            allOrders
+              .filter(o => o.status === "shipped")
+              .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
               .map((order) => (
                 <OrderCard
                   key={order.dbKey}
                   order={order}
                   showDeliveryEdit={false}
                   showStatusActions={order.status === "shipped"}
-                  statuses={order.status === "shipped" ? ["Mark as Delivered"] : []}
+                  statuses={order.status === "shipped" ? ["delivered"] : []}
                   onStatusChange={updateOrderStatus}
                 />
-              ));
-          })()
-        )}
-      </div>
+              ))
+          )}
+        </div>
 
-      <div className="admin-card">
-        <h3>Cancelled Orders</h3>
-        {allOrders.filter(o => o.status === "cancelled").length === 0 ? (
-          <p className="loading-state">No cancelled orders.</p>
-        ) : (
-          allOrders
-            .filter(o => o.status === "cancelled")
-            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-            .map((order) => (
-              <OrderCard
-                key={order.dbKey}
-                order={order}
-                showDeliveryEdit={false}
-                showStatusActions={false}
-                statuses={[]}
-                onStatusChange={updateOrderStatus}
-              />
-            ))
-        )}
+        <div className="admin-card">
+          <h3>Cancelled Orders</h3>
+          {allOrders.filter(o => o.status === "cancelled").length === 0 ? (
+            <p className="loading-state">No cancelled orders.</p>
+          ) : (
+            allOrders
+              .filter(o => o.status === "cancelled")
+              .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+              .map((order) => (
+                <OrderCard
+                  key={order.dbKey}
+                  order={order}
+                  showDeliveryEdit={false}
+                  showStatusActions={false}
+                  statuses={[]}
+                  onStatusChange={updateOrderStatus}
+                />
+              ))
+          )}
+        </div>
       </div>
     </section>
   );
