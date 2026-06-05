@@ -21,7 +21,7 @@ export const submitToGoogleForms = async (orderData, customerEmail) => {
     formData.append("entry.251803140", orderData.items.map((i) => `${i.name} (x${i.quantity})`).join(", "));
     formData.append("entry.1384354734", String(orderData.total));
     formData.append("entry.1824052770", String(orderData.paymentMethod));
-    formData.append("entry.1691925111", orderData.giftWrap ? "Yes" : "No");
+    formData.append("entry.1691925111", orderData.giftBag ? "Yes" : "No");
     formData.append("entry.1907235798", String(orderData.cardMessage || "None"));
     formData.append("entry.2120889714", String(orderData.status || "pending"));
 
@@ -87,8 +87,9 @@ export const sendOrderEmail = async (orderData, customerEmail) => {
 
       <h3>Order Summary</h3>
       <p><strong>Subtotal:</strong> ${orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0)} LE</p>
-      ${orderData.giftWrap ? `<p><strong>Gift Wrapping:</strong> 50 LE</p>` : ""}
+      ${orderData.giftBag ? `<p><strong>Gift Bag:</strong> 20 LE</p>` : ""}
       ${orderData.cardMessage ? `<p><strong>Gift Message:</strong> 10 LE (${orderData.cardMessage})</p>` : ""}
+      <p><strong>Shipping:</strong> 40 LE</p>
       <p><strong>Total:</strong> ${orderData.total} LE</p>
 
       <p><strong>Payment Method:</strong> ${orderData.paymentMethod.toUpperCase()}</p>
@@ -161,7 +162,7 @@ export const sendAdminNotification = async (orderData, customerEmail) => {
 
       <p><strong>Total:</strong> ${orderData.total} LE</p>
       <p><strong>Payment Method:</strong> ${orderData.paymentMethod.toUpperCase()}</p>
-      <p><strong>Gift Wrap:</strong> ${orderData.giftWrap ? "Yes" : "No"}</p>
+      <p><strong>Gift Bag:</strong> ${orderData.giftBag ? "Yes" : "No"}</p>
       ${orderData.cardMessage ? `<p><strong>Message:</strong> ${orderData.cardMessage}</p>` : ""}
     `;
 
@@ -209,6 +210,9 @@ export const sendCancellationEmail = async (orderData, customerEmail) => {
       .map((item) => `<li>${item.name} (x${item.quantity}) - ${item.price * item.quantity} LE</li>`)
       .join("");
 
+    const isNotCOD = orderData.paymentMethod && orderData.paymentMethod.toLowerCase() !== "cod";
+    const subtotal = orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
     const htmlContent = `
       <h2>Order Cancelled 🚫 - #${orderData.id}</h2>
       <p>Hello ${orderData.name},</p>
@@ -219,13 +223,18 @@ export const sendCancellationEmail = async (orderData, customerEmail) => {
         ${itemsList}
       </ul>
 
+      ${isNotCOD ? `
       <h3>Refund Summary</h3>
-      <p><strong>Subtotal:</strong> ${orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0)} LE</p>
-      ${orderData.giftWrap ? `<p><strong>Gift Wrapping:</strong> 50 LE (refunded)</p>` : ""}
+      <p><strong>Subtotal:</strong> ${subtotal} LE</p>
+      ${orderData.giftBag ? `<p><strong>Gift Bag:</strong> 20 LE (refunded)</p>` : ""}
       ${orderData.cardMessage ? `<p><strong>Gift Message:</strong> 10 LE (refunded)</p>` : ""}
+      <p><strong>Shipping:</strong> 40 LE (refunded)</p>
       <p><strong>Total Refund:</strong> ${orderData.total} LE</p>
+      <p>The refund will be processed within 5 business days.</p>
+      ` : `
+      <p><strong>No refund needed:</strong> Since you chose Cash on Delivery, no payment was collected from you.</p>
+      `}
 
-      <p>If you paid in advance, the refund will be processed within 5-7 business days.</p>
       <p>If you have any questions, please contact us at <a href="mailto:giftoo.storee@gmail.com">giftoo.storee@gmail.com</a></p>
       <p>Thank you for understanding.<br>Best regards,<br>GIFTO Team</p>
     `;
@@ -275,6 +284,9 @@ export const sendCancellationAdminNotification = async (orderData, customerEmail
       .map((item) => `<li>${item.name} (x${item.quantity})</li>`)
       .join("");
 
+    const isNotCOD = orderData.paymentMethod && orderData.paymentMethod.toLowerCase() !== "cod";
+    const subtotal = orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
     const htmlContent = `
       <h2>Order Cancelled 🚫</h2>
       <p><strong>Order ID:</strong> #${orderData.id}</p>
@@ -289,8 +301,20 @@ export const sendCancellationAdminNotification = async (orderData, customerEmail
         ${itemsList}
       </ul>
 
-      <p><strong>Total Refunded:</strong> ${orderData.total} LE</p>
       <p><strong>Payment Method:</strong> ${orderData.paymentMethod.toUpperCase()}</p>
+
+      ${isNotCOD ? `
+      <h3>Refund Summary</h3>
+      <p><strong>Subtotal:</strong> ${subtotal} LE</p>
+      ${orderData.giftBag ? `<p><strong>Gift Bag:</strong> 20 LE (refunded)</p>` : ""}
+      ${orderData.cardMessage ? `<p><strong>Gift Message:</strong> 10 LE (refunded)</p>` : ""}
+      <p><strong>Shipping:</strong> 40 LE (refunded)</p>
+      <p><strong>Total Refund Amount:</strong> ${orderData.total} LE</p>
+      <p><em>Refund to be processed within 5 business days.</em></p>
+      ` : `
+      <p><strong>No Refund:</strong> Cash on Delivery - No payment was collected.</p>
+      `}
+
       <p>Inventory has been restored for all items in this order.</p>
     `;
 
@@ -431,8 +455,6 @@ export const sendRequestAdminNotification = async (requestData) => {
       <p><strong>Customer Email:</strong> <a href="mailto:${requestData.email}">${requestData.email}</a></p>
       ${requestData.description ? `<p><strong>Description:</strong> ${requestData.description}</p>` : ""}
       ${requestData.budgetMin || requestData.budgetMax ? `<p><strong>Budget Range:</strong> ${requestData.budgetMin || "No minimum"} - ${requestData.budgetMax || "No maximum"} LE</p>` : ""}
-      <p><strong>Current Status:</strong> ${requestData.status || "pending"}</p>
-      <p>You can update the status of this request in the admin dashboard.</p>
     `;
 
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {

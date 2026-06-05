@@ -905,7 +905,8 @@ const GIFTOWebsite = () => {
     event.preventDefault();
     setToast(null);
 
-    if (!requestForm.itemName || !requestForm.email) {
+    const finalEmail = requestForm.email || (user?.email || "");
+    if (!requestForm.itemName || !finalEmail) {
       showToast("Item name and email are required.", "error");
       return;
     }
@@ -916,7 +917,7 @@ const GIFTOWebsite = () => {
         itemName: requestForm.itemName,
         category: requestForm.category,
         description: requestForm.description,
-        email: requestForm.email || (user?.email || ""),
+        email: finalEmail,
         budgetMin: requestForm.budgetMin ? Number(requestForm.budgetMin) : null,
         budgetMax: requestForm.budgetMax ? Number(requestForm.budgetMax) : null,
         userId: user?.uid || null,
