@@ -14,6 +14,7 @@ import BusinessOverview from "./BusinessOverview";
 import ManageRequests from "./ManageRequests";
 import ManageInventory from "./ManageInventory";
 import ManageOrders from "./ManageOrders";
+import ManageCustomers from "./ManageCustomers";
 import EditProductModal from "./EditProductModal";
 import EditDeliveryModal from "./EditDeliveryModal";
 import "../../App.css";
@@ -544,6 +545,11 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
           updateOrderStatus={updateOrderStatus}
           setEditingDeliveryTime={setEditingDeliveryTime}
           setDeliveryTimeInput={setDeliveryTimeInput}
+        />
+
+        <ManageCustomers
+          users={users}
+          allOrders={allOrders}
         />
       </main>
 

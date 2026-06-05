@@ -22,11 +22,11 @@ const OrderCard = ({ order, showDeliveryEdit = false, onDeliveryEdit = null, onS
           </p>
         )}
         {order.giftBag && (
-          <p className="order-summary-text">Gift bag: Yes</p>
+          <p className="order-summary-text">Gift Bag: Yes</p>
         )}
         {order.cardMessage && (
           <p className="order-summary-text">
-            Message card: {order.cardMessage}
+            Message Card: {order.cardMessage}
           </p>
         )}
         {order.deliveryTime && showDeliveryEdit && (
