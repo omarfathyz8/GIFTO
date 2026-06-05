@@ -71,12 +71,6 @@ const BusinessOverview = ({ products, allOrders, requests, users }) => {
           <div className="metric-description">Awaiting review</div>
         </div>
 
-        <div className="dashboard-card highlight">
-          <div className="metric-label">Revenue</div>
-          <div className="metric-value">{allOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total || 0), 0)} LE</div>
-          <div className="metric-description">Delivered orders only</div>
-        </div>
-
         <div className="dashboard-card">
           <div className="metric-label">Avg Delivery Time</div>
           <div className="metric-value">
@@ -95,6 +89,48 @@ const BusinessOverview = ({ products, allOrders, requests, users }) => {
           </div>
           <div className="metric-description">Order to delivery</div>
         </div>
+
+        <div className="dashboard-card highlight">
+          <div className="metric-label">Revenue</div>
+          <div className="metric-value">{allOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total || 0), 0)} LE</div>
+          <div className="metric-description">Delivered orders only</div>
+        </div>
+
+        <div className="dashboard-card">
+          <div className="metric-label">Total Inventory</div>
+          <div className="metric-value">
+            {(() => {
+              let totalStock = 0;
+              products.forEach(product => {
+                if (product.colors && typeof product.colors === 'object') {
+                  Object.values(product.colors).forEach(color => {
+                    totalStock += color.stock || 0;
+                  });
+                }
+              });
+              return totalStock;
+            })()}
+          </div>
+          <div className="metric-description">Total units in stock</div>
+        </div>
+
+        <div className="dashboard-card highlight">
+          <div className="metric-label">Inventory Value</div>
+          <div className="metric-value">
+            {(() => {
+              let totalValue = 0;
+              products.forEach(product => {
+                if (product.colors && typeof product.colors === 'object') {
+                  Object.values(product.colors).forEach(color => {
+                    totalValue += (color.stock || 0) * (product.price || 0);
+                  });
+                }
+              });
+              return totalValue;
+            })()} LE
+          </div>
+          <div className="metric-description">Value of all stock</div>
+        </div>
       </div>
 
       <div className="insights-card">
@@ -103,15 +139,28 @@ const BusinessOverview = ({ products, allOrders, requests, users }) => {
           {allOrders.filter(o => o.status === 'pending').length > 5 && (
             <li className="insight-warning">⚠️ <strong>High Pending Orders:</strong> You have {allOrders.filter(o => o.status === 'pending').length} pending orders. Consider processing them to improve delivery times.</li>
           )}
-          {products.filter(p => p.inventory === 0).length && (
-            <li className="insight-warning">📦 <strong>Low Stock Alert:</strong> {products.filter(p => p.inventory === 0).length} products are out of stock. Restock popular items.</li>
-          )}
+          {(() => {
+            const outOfStockProducts = products.filter(p => {
+              if (!p.colors || typeof p.colors !== 'object') return false;
+              return Object.values(p.colors).every(color => (color.stock || 0) === 0);
+            }).length;
+            return outOfStockProducts > 0 && (
+              <li className="insight-warning">📦 <strong>Out of Stock Alert:</strong> {outOfStockProducts} products are completely out of stock. Restock popular items.</li>
+            );
+          })()}
           {allOrders.filter(o => o.status === 'cancelled').length > allOrders.length * 0.1 && (
             <li className="insight-warning">📊 <strong>High Cancellation Rate:</strong> Your cancellation rate is above 10%. Review customer feedback.</li>
           )}
-          {products.filter(p => p.inventory > 0 && p.inventory <= 5).length && (
-            <li className="insight-info">⏰ <strong>Low Inventory:</strong> {products.filter(p => p.inventory > 0 && p.inventory <= 5).length} products have low stock. Consider reordering soon.</li>
-          )}
+          {(() => {
+            const lowStockProducts = products.filter(p => {
+              if (!p.colors || typeof p.colors !== 'object') return false;
+              const totalStock = Object.values(p.colors).reduce((sum, color) => sum + (color.stock || 0), 0);
+              return totalStock > 0 && totalStock <= 10;
+            }).length;
+            return lowStockProducts > 0 && (
+              <li className="insight-info">⏰ <strong>Low Inventory:</strong> {lowStockProducts} products have low stock (≤5 units). Consider reordering soon.</li>
+            );
+          })()}
           {products.length > 0 && (
             <li className="insight-info">📈 <strong>Total Products:</strong> You have {products.length} products in your catalog. Monitor bestsellers and underperformers.</li>
           )}
