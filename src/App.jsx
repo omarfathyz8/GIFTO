@@ -17,7 +17,7 @@ import {
   serverTimestamp,
 } from "firebase/database";
 import { sendOrderEmail, submitToGoogleForms, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet, sendRequestConfirmationEmail, sendRequestAdminNotification } from "./services/notifications";
-import AdminDashboard from "./components/AdminDashboard";
+import AdminDashboard from "./components/admin/AdminDashboard";
 import "./App.css";
 
 const GIFTOWebsite = () => {
