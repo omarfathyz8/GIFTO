@@ -26,7 +26,7 @@ const GIFTOWebsite = () => {
   const [showWishlist, setShowWishlist] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
-  const [giftWrap, setGiftWrap] = useState(false);
+  const [giftBag, setGiftBag] = useState(false);
   const [giftMessageEnabled, setGiftMessageEnabled] = useState(false);
   const [giftMessage, setGiftMessage] = useState("");
   const [wishlists, setWishlists] = useState(new Set());
@@ -109,7 +109,7 @@ const GIFTOWebsite = () => {
     "grey": "#808080",
     "green": "#008000",
     "ivory": "#fffff0",
-    "lavender": "#e6e6fa",
+    "lavender": "#9c9cce",
     "mint": "#98ff98",
     "mint green": "#98ff98",
     "navy": "#010157",
@@ -555,9 +555,10 @@ const GIFTOWebsite = () => {
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
-  const giftWrapFee = giftWrap ? 50 : 0;
+  const giftBagFee = giftBag ? 20 : 0;
   const giftMessageFee = giftMessageEnabled ? 10 : 0;
-  const finalTotal = cartTotal + giftWrapFee + giftMessageFee;
+  const shippingFee = 40;
+  const finalTotal = cartTotal + giftBagFee + giftMessageFee + shippingFee;
 
   const formatTimestamp = (value) => {
     if (!value) {
@@ -686,7 +687,7 @@ const GIFTOWebsite = () => {
 
     const timer = setTimeout(() => {
       setToast(null);
-    }, 3600);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [toast]);
@@ -1011,7 +1012,7 @@ const GIFTOWebsite = () => {
       items: cart,
       total: finalTotal,
       paymentMethod,
-      giftWrap,
+      giftBag,
       cardMessage: giftMessage,
       status: "pending",
       createdAt: serverTimestamp(),
@@ -1062,7 +1063,7 @@ const GIFTOWebsite = () => {
     setCart([]);
     setShowCheckout(false);
     setGiftMessage("");
-    setGiftWrap(false);
+    setGiftBag(false);
     setPaymentMethod("cod");
     showToast("Your order has been placed successfully.", "success");
   };
@@ -1451,7 +1452,7 @@ const GIFTOWebsite = () => {
                     {order.paymentMethod.toUpperCase()}
                   </p>
                   <p className="order-summary-text">
-                    Gift wrap: {order.giftWrap ? "Yes" : "No"}
+                    Gift bag: {order.giftBag ? "Yes" : "No"}
                   </p>
                   {order.cardMessage ? (
                     <p className="order-summary-text">
@@ -1661,10 +1662,10 @@ const GIFTOWebsite = () => {
                   <label className="checkbox-label">
                     <input
                       type="checkbox"
-                      checked={giftWrap}
-                      onChange={(e) => setGiftWrap(e.target.checked)}
+                      checked={giftBag}
+                      onChange={(e) => setGiftBag(e.target.checked)}
                     />
-                    Premium Gift Wrapping (+50 LE)
+                    Gift Bag (+20 LE)
                   </label>
                   <label className="checkbox-label">
                     <input
@@ -1678,7 +1679,7 @@ const GIFTOWebsite = () => {
                         }
                       }}
                     />
-                    Add a gift message (+10 LE)
+                    Gift Message (+10 LE)
                   </label>
                   {giftMessageEnabled && (
                     <label className="admin-label gift-message-label">
@@ -1697,10 +1698,10 @@ const GIFTOWebsite = () => {
                     <span>Subtotal</span>
                     <span>{cartTotal} LE</span>
                   </div>
-                  {giftWrap && (
+                  {giftBag && (
                     <div className="summary-row">
-                      <span>Gift Wrapping</span>
-                      <span>50 LE</span>
+                      <span>Gift Bag</span>
+                      <span>20 LE</span>
                     </div>
                   )}
                   {giftMessageEnabled && (
@@ -1709,6 +1710,10 @@ const GIFTOWebsite = () => {
                       <span>10 LE</span>
                     </div>
                   )}
+                  <div className="summary-row">
+                    <span>Shipping</span>
+                    <span>40 LE</span>
+                  </div>
                   <div className="summary-row total-row">
                     <span>Total</span>
                     <span>{finalTotal} LE</span>
@@ -2163,7 +2168,7 @@ const GIFTOWebsite = () => {
               </label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <label className="auth-label">
-                  Budget Min (LE) (optional)
+                  Budget Min (LE)
                   <input
                     type="number"
                     min="0"
@@ -2178,7 +2183,7 @@ const GIFTOWebsite = () => {
                   />
                 </label>
                 <label className="auth-label">
-                  Budget Max (LE) (optional)
+                  Budget Max (LE)
                   <input
                     type="number"
                     min="0"
