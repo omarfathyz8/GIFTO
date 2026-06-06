@@ -504,6 +504,10 @@ const GIFTOWebsite = () => {
   const decrementProductQuantity = (productId) => updateProductQuantity(productId, -1);
 
   const addToCart = (product, quantity = 1) => {
+    if (!user) {
+      showToast("Please sign in to place an order", "error");
+      return;
+    }
     const selectedColor = selectedColors[product.id] || Object.keys(product.colors || {})[0] || "Default";
     const available = getAvailableInventory(product, selectedColor);
     if (available === 0) {
@@ -1245,9 +1249,16 @@ const GIFTOWebsite = () => {
                 className="secondary-button"
                 onClick={() => {
                   setShowTrackRequest(true);
-                  setTrackingEmail("");
-                  setTrackedRequests([]);
-                  setTrackingSearched(false);
+                  if (user) {
+                    setTrackingEmail(user.email);
+                    setSearchedEmail(user.email);
+                    setTrackingSearched(true);
+                  } else {
+                    setTrackingEmail("");
+                    setTrackedRequests([]);
+                    setTrackingSearched(false);
+                    setSearchedEmail("");
+                  }
                 }}
               >
                 Track Requests
@@ -1373,50 +1384,48 @@ const GIFTOWebsite = () => {
                       </button>
                     )}
                   </div>
-                  {canUseCart && (
-                    <div className="product-card-controls">
-                      <div className="product-card-quantity">
-                        <button
-                          type="button"
-                          className="quantity-button"
-                          onClick={() => decrementProductQuantity(product.id)}
-                          aria-label={`Decrease quantity of ${product.name}`}
-                          disabled={getProductQuantity(product.id) <= 1 || getAvailableInventory(product, selectedColor) === 0}
-                        >
-                          −
-                        </button>
-                        <span className="quantity-value">
-                          {getAvailableInventory(product, selectedColor) === 0 ? 0 : getProductQuantity(product.id)}
-                        </span>
-                        <button
-                          type="button"
-                          className="quantity-button"
-                          onClick={() => incrementProductQuantity(product)}
-                          aria-label={`Increase quantity of ${product.name}`}
-                          disabled={
-                            getProductQuantity(product.id) >=
-                            getAvailableInventory(product, selectedColor)
-                          }
-                        >
-                          +
-                        </button>
-                      </div>
+                  <div className="product-card-controls">
+                    <div className="product-card-quantity">
                       <button
                         type="button"
-                        className="add-button"
-                        onClick={() => {
-                          const quantity = getProductQuantity(product.id) || 1;
-                          addToCart(product, quantity);
-                          setProductQuantities((current) => ({
-                            ...current,
-                            [product.id]: 0,
-                          }));
-                        }}
+                        className="quantity-button"
+                        onClick={() => decrementProductQuantity(product.id)}
+                        aria-label={`Decrease quantity of ${product.name}`}
+                        disabled={getProductQuantity(product.id) <= 1 || getAvailableInventory(product, selectedColor) === 0}
                       >
-                        Add to Cart
+                        −
+                      </button>
+                      <span className="quantity-value">
+                        {getAvailableInventory(product, selectedColor) === 0 ? 0 : getProductQuantity(product.id)}
+                      </span>
+                      <button
+                        type="button"
+                        className="quantity-button"
+                        onClick={() => incrementProductQuantity(product)}
+                        aria-label={`Increase quantity of ${product.name}`}
+                        disabled={
+                          getProductQuantity(product.id) >=
+                          getAvailableInventory(product, selectedColor)
+                        }
+                      >
+                        +
                       </button>
                     </div>
-                  )}
+                    <button
+                      type="button"
+                      className="add-button"
+                      onClick={() => {
+                        const quantity = getProductQuantity(product.id) || 1;
+                        addToCart(product, quantity);
+                        setProductQuantities((current) => ({
+                          ...current,
+                          [product.id]: 0,
+                        }));
+                      }}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
                 </div>
               </article>
               );
@@ -2260,7 +2269,7 @@ const GIFTOWebsite = () => {
             </button>
             <h2 className="modal-title">Track Your Request</h2>
 
-            {trackedRequests.length === 0 && (
+            {trackedRequests.length === 0 && !user && (
               <>
                 <p className="modal-subtitle">Enter your email to check the status of your requests</p>
                 <form className="auth-form" onSubmit={handleTrackRequest}>
@@ -2283,6 +2292,10 @@ const GIFTOWebsite = () => {
                   <p className="empty-state">No requests found for this email.</p>
                 )}
               </>
+            )}
+
+            {trackedRequests.length === 0 && user && trackingSearched && (
+              <p className="empty-state">No requests found for your email.</p>
             )}
 
             {trackedRequests.length > 0 && (
