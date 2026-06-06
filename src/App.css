@@ -13,6 +13,14 @@
   --shadow: 0 24px 80px rgba(71, 46, 21, 0.12);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+#MyOrders {
+  scroll-margin-top: 130px; 
+}
+
 .app-shell {
   min-height: 100vh;
   background:
@@ -172,6 +180,7 @@
   border-radius: 1rem;
   object-fit: contain;
   object-position: center;
+  border: 2px solid var(--accent);
   margin: -1.5rem auto 1.5rem;
   box-shadow: 0 4px 12px rgba(139, 69, 19, 0.15);
 }
@@ -212,7 +221,7 @@
 .full-width {
   border: none;
   border-radius: 999px;
-  padding: 0.95rem 1.75rem;
+  padding: 0.8rem 1.1rem;
   font-weight: 700;
   cursor: pointer;
   transition:
@@ -454,7 +463,7 @@
   border-radius: 0.4rem;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  margin-left: 5.8rem;
+  margin-left: 10rem;
   white-space: nowrap;
 }
 
