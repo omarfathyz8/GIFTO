@@ -100,13 +100,13 @@ const GIFTOWebsite = () => {
   const colorMap = {
     "black": "#000000",
     "blue": "#0000ff",
-    "brown": "#a52a2a",
+    "brown": "#6e330c",
     "cafe": "#c29567",
     "cherry": "#de3163",
     "coral": "#ff7f50",
     "cream": "#fffdd0",
     "cyan": "#4ea1d5",
-    "dark brown": "#3e2723",
+    "dark brown": "#3f2824",
     "dark green": "#1b5e20",
     "gold": "#ffd700",
     "gray": "#808080",
@@ -274,14 +274,21 @@ const GIFTOWebsite = () => {
           );
           loadedProducts.sort((a, b) => a.id - b.id);
           setProducts(loadedProducts);
-        } else {
+          try {
+            window.localStorage.setItem("gift-store-products-cache", JSON.stringify(loadedProducts));
+          } catch (e) {
+            console.error("Cache save error:", e);
+          }
+        } else if (!cachedProducts) {
           setProducts(defaultProducts);
         }
         setLoadingProducts(false);
       },
       (error) => {
         console.error("Firebase products error:", error);
-        setProducts(defaultProducts);
+        if (!cachedProducts) {
+          setProducts(defaultProducts);
+        }
         setLoadingProducts(false);
       },
     );
@@ -703,22 +710,26 @@ const GIFTOWebsite = () => {
   }, [toast]);
 
   useEffect(() => {
-    const intervals = products.map((product) => {
-      if (!product.images || product.images.length <= 1) return null;
+    const productIds = products
+      .filter((p) => p.images && p.images.length > 1)
+      .map((p) => p.id);
 
-      return setInterval(() => {
-        setCurrentImageIndex((prev) => ({
-          ...prev,
-          [product.id]: ((prev[product.id] || 0) + 1) % product.images.length,
-        }));
-      }, 2500);
-    });
+    if (productIds.length === 0) return undefined;
 
-    return () => {
-      intervals.forEach((interval) => {
-        if (interval) clearInterval(interval);
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => {
+        const updated = { ...prev };
+        productIds.forEach((id) => {
+          const product = products.find((p) => p.id === id);
+          if (product?.images) {
+            updated[id] = ((prev[id] || 0) + 1) % product.images.length;
+          }
+        });
+        return updated;
       });
-    };
+    }, 2500);
+
+    return () => clearInterval(interval);
   }, [products]);
 
   const dismissToast = () => setToast(null);
@@ -971,6 +982,10 @@ const GIFTOWebsite = () => {
   };
 
   useEffect(() => {
+    if (!trackingSearched || !searchedEmail) {
+      return undefined;
+    }
+
     const requestsRef = dbRef(db, "requests");
     const unsubscribe = onValue(
       requestsRef,
@@ -984,12 +999,10 @@ const GIFTOWebsite = () => {
           }))
           .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
-        if (trackingSearched && searchedEmail) {
-          const matching = loadedRequests.filter(
-            (request) => request.email?.toLowerCase() === searchedEmail.toLowerCase()
-          );
-          setTrackedRequests(matching);
-        }
+        const matching = loadedRequests.filter(
+          (request) => request.email?.toLowerCase() === searchedEmail.toLowerCase()
+        );
+        setTrackedRequests(matching);
       },
       (error) => {
         console.error("Firebase requests error:", error);
@@ -1015,6 +1028,7 @@ const GIFTOWebsite = () => {
     const currentTime = Date.now();
     const deliveryTime = calculateDeliveryTime(currentTime);
     const orderId = `ORDER_${currentTime.toString().slice(-8)}`;
+    const currentCart = cart;
 
     const orderData = {
       id: orderId,
@@ -1022,7 +1036,7 @@ const GIFTOWebsite = () => {
       name: userProfile?.name || "",
       address: userProfile?.address || "",
       phone: userProfile?.phone || "",
-      items: cart,
+      items: currentCart,
       total: finalTotal,
       paymentMethod,
       giftBag,
@@ -1040,60 +1054,66 @@ const GIFTOWebsite = () => {
       ],
     };
 
-    await set(orderRef, orderData);
-
-    sendOrderEmail(orderData, user.email);
-    sendAdminNotification(orderData, user.email);
-    submitToGoogleForms(orderData, user.email);
-
-    try {
-      const userRef = dbRef(db, `users/${user.uid}`);
-      const snapshot = await new Promise((resolve) => {
-        onValue(userRef, (snap) => resolve(snap.val()), { once: true });
-      });
-      const currentCount = snapshot?.ordersCount || 0;
-      await update(userRef, {
-        ordersCount: currentCount + 1,
-      });
-    } catch (error) {
-      console.error("Error updating orders count:", error);
-    }
-
-    for (const item of cart) {
-      const product = products.find((p) => p.id === item.id);
-      if (product && product.dbKey) {
-        const selectedColor = item.selectedColor;
-        if (selectedColor && product.colors && product.colors[selectedColor]) {
-          const currentStock = Number(product.colors[selectedColor].stock) || 0;
-          const newStock = Math.max(currentStock - item.quantity, 0);
-          await update(dbRef(db, `products/${product.dbKey}/colors/${selectedColor}`), {
-            stock: newStock,
-          });
-        }
-      }
-    }
-
     setCart([]);
     setShowCheckout(false);
     setGiftMessage("");
     setGiftBag(false);
     setPaymentMethod("cod");
-    showToast("Your order has been placed successfully.", "success");
+    showToast("Order placed! Check My Orders for details.", "success");
+
+    setTimeout(async () => {
+      try {
+        await set(orderRef, orderData);
+
+        const userRef = dbRef(db, `users/${user.uid}`);
+        const snapshot = await new Promise((resolve) => {
+          onValue(userRef, (snap) => resolve(snap.val()), { once: true });
+        });
+        const currentCount = snapshot?.ordersCount || 0;
+
+        const stockUpdates = currentCart.map((item) => {
+          const product = products.find((p) => p.id === item.id);
+          if (product && product.dbKey) {
+            const selectedColor = item.selectedColor;
+            if (selectedColor && product.colors && product.colors[selectedColor]) {
+              const currentStock = Number(product.colors[selectedColor].stock) || 0;
+              const newStock = Math.max(currentStock - item.quantity, 0);
+              return update(dbRef(db, `products/${product.dbKey}/colors/${selectedColor}`), {
+                stock: newStock,
+              });
+            }
+          }
+          return Promise.resolve();
+        });
+
+        await Promise.all([
+          update(userRef, { ordersCount: currentCount + 1 }),
+          ...stockUpdates,
+        ]);
+
+        sendOrderEmail(orderData, user.email);
+        sendAdminNotification(orderData, user.email);
+        submitToGoogleForms(orderData, user.email);
+      } catch (error) {
+        console.error("Order creation error:", error);
+      }
+    }, 0);
   };
 
-  const itemCounts = {};
-  allOrders.forEach(order => {
-    if (order.items && Array.isArray(order.items)) {
-      order.items.forEach(item => {
-        itemCounts[item.name] = (itemCounts[item.name] || 0) + item.quantity;
-      });
-    }
-  });
+  const bestSellerName = React.useMemo(() => {
+    const counts = {};
+    allOrders.forEach(order => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          counts[item.name] = (counts[item.name] || 0) + item.quantity;
+        });
+      }
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  }, [allOrders]);
 
-  const bestSellerName = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-
-  const filteredProducts = products
-    .filter((product) => {
+  const filteredProducts = React.useMemo(() => {
+    return products.filter((product) => {
       const query = searchQuery.toLowerCase();
       const productCat = product.category.toLowerCase();
       const matchesSearch = (
@@ -1102,12 +1122,8 @@ const GIFTOWebsite = () => {
       );
       const matchesBudget = !budgetLimit || product.price <= Number(budgetLimit);
       return matchesSearch && matchesBudget;
-    })
-    .sort((a, b) => {
-      if (a.name === bestSellerName) return -1;
-      if (b.name === bestSellerName) return 1;
-      return (b.id || 0) - (a.id || 0);
     });
+  }, [products, searchQuery, budgetLimit]);
 
   const selectedCategory = categories.includes(searchQuery)
     ? searchQuery
@@ -1287,9 +1303,12 @@ const GIFTOWebsite = () => {
             <p className="loading-state">No products available yet.</p>
           ) : (
             (() => {
-              const bestSellerName = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-
-              return filteredProducts.map((product) => {
+              const sorted = filteredProducts.sort((a, b) => {
+                if (a.name === bestSellerName) return -1;
+                if (b.name === bestSellerName) return 1;
+                return (b.id || 0) - (a.id || 0);
+              });
+              return sorted.map((product) => {
                 const colors = product.colors || {};
                 const colorNames = Object.keys(colors);
                 const selectedColor = selectedColors[product.id] || colorNames[0];
