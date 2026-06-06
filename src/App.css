@@ -1915,7 +1915,6 @@ html {
 }
 
 .contact-link:hover {
-  background-color: var(--surface);
   text-decoration: underline;
 }
 

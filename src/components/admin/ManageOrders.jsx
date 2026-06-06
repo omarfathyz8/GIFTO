@@ -9,7 +9,7 @@ const OrderCard = ({ order, showDeliveryEdit = false, onDeliveryEdit = null, onS
           #{order.id} - {order.total} LE
         </p>
         <p className="order-meta">
-          {order.name} | {order.phone} | {order.address}
+          {order.name} | <a href={`tel:${order.phone}`} className="contact-link phone-link" title="Call customer">{order.phone}</a> | <a href={`https://maps.google.com/?q=${encodeURIComponent(order.address)}`} target="_blank" rel="noopener noreferrer" className="contact-link" title="Customer location">{order.address}</a>
         </p>
         <p className="order-summary-text">
           {order.items.length > 0

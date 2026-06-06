@@ -59,7 +59,9 @@ const ManageCustomers = ({ users, allOrders }) => {
                       {user.address && (
                         <>
                           <span className="contact-separator">|</span>
-                          <span className="address-text">{user.address}</span>
+                          <a href={`https://maps.google.com/?q=${encodeURIComponent(user.address)}`} target="_blank" rel="noopener noreferrer" className="contact-link" title="Customer location">
+                            {user.address}
+                          </a>
                         </>
                       )}
                     </div>
