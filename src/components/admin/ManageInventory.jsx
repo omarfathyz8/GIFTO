@@ -1,6 +1,39 @@
 import React, { useState } from "react";
 import { X, Upload } from "lucide-react";
 
+const colorMap = {
+  "black": "#000000",
+  "blue": "#0000ff",
+  "brown": "#6e330c",
+  "cafe": "#c29567",
+  "cherry": "#de3163",
+  "coral": "#ff7f50",
+  "cream": "#fffdd0",
+  "cyan": "#4ea1d5",
+  "dark brown": "#3f2824",
+  "dark green": "#1b5e20",
+  "gold": "#ffd700",
+  "gray": "#808080",
+  "grey": "#808080",
+  "green": "#008000",
+  "ivory": "#fffff0",
+  "lavender": "#8778b8",
+  "mint": "#98ff98",
+  "mint green": "#98ff98",
+  "navy": "#010157",
+  "off-white": "#f5f1ed",
+  "orange": "#ff8800",
+  "pink": "#ffb6c1",
+  "purple": "#800080",
+  "red": "#ff0000",
+  "rose": "#f894c3",
+  "silver": "#c0c0c0",
+  "teal": "#008080",
+  "white": "#ffffff",
+  "wood": "#dfbf8f",
+  "yellow": "#ffff00",
+};
+
 const ManageInventory = ({
   products,
   newProduct,
@@ -32,6 +65,19 @@ const ManageInventory = ({
       }
     });
     return totalSold;
+  };
+
+  const getHexColor = (colorName) => {
+    return colorMap[colorName.toLowerCase()] || "#cccccc";
+  };
+
+  const getTextColor = (hexColor) => {
+    const hex = hexColor.replace("#", "");
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    const luminance = (r * 299 + g * 587 + b * 114) / 1000;
+    return luminance > 128 ? "#000000" : "#ffffff";
   };
   return (
     <section className="admin-section">
@@ -245,22 +291,49 @@ const ManageInventory = ({
                       Sold: {getProductSoldCount(product.name)}
                     </span>
                   </p>
-                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: "6px", rowGap: "6px", flexWrap: "wrap", alignItems: "center" }}>
                     {Object.entries(product.colors || {}).map(([colorName, colorData]) => {
                       const stock = colorData?.stock ?? 0;
+                      const hexColor = getHexColor(colorName);
+
+                      let cardBgColor;
+                      if (stock === 0) {
+                        cardBgColor = "rgba(220, 38, 38, 0.1)";
+                      } else if (stock < 5) {
+                        cardBgColor = "rgba(202, 138, 4, 0.1)";
+                      } else {
+                        cardBgColor = "rgba(22, 163, 74, 0.1)";
+                      }
+
                       return (
-                        <p
+                        <div
                           key={colorName}
-                          className={`product-meta inventory-status ${
-                            stock === 0
-                              ? "inventory-out"
-                              : stock <= 5
-                                ? "inventory-low"
-                                : "inventory-good"
-                          }`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            padding: "6px 10px",
+                            backgroundColor: cardBgColor,
+                            borderRadius: "6px",
+                            border: "1px solid var(--border)",
+                            marginTop: "2px",
+                          }}
+                          title={colorName}
                         >
-                          {colorName}: {stock}
-                        </p>
+                          <div
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              borderRadius: "50%",
+                              backgroundColor: hexColor,
+                              border: stock === 0 ? "2px dashed var(--border)" : "1px solid rgba(0,0,0,0.1)",
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span style={{ fontSize: "0.85rem", color: "var(--text)", fontWeight: "500" }}>
+                            {stock}
+                          </span>
+                        </div>
                       );
                     })}
                   </div>
