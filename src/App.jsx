@@ -17,6 +17,7 @@ import {
   serverTimestamp,
 } from "firebase/database";
 import { sendOrderEmail, submitToGoogleForms, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet, sendRequestConfirmationEmail, sendRequestAdminNotification } from "./services/notifications";
+import { uploadToCloudinary, getOptimizedImageUrl } from "./services/cloudinary";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import "./App.css";
 
@@ -274,21 +275,11 @@ const GIFTOWebsite = () => {
           );
           loadedProducts.sort((a, b) => a.id - b.id);
           setProducts(loadedProducts);
-          try {
-            window.localStorage.setItem("gift-store-products-cache", JSON.stringify(loadedProducts));
-          } catch (e) {
-            console.error("Cache save error:", e);
-          }
-        } else if (!cachedProducts) {
-          setProducts(defaultProducts);
         }
         setLoadingProducts(false);
       },
       (error) => {
         console.error("Firebase products error:", error);
-        if (!cachedProducts) {
-          setProducts(defaultProducts);
-        }
         setLoadingProducts(false);
       },
     );
@@ -602,7 +593,7 @@ const GIFTOWebsite = () => {
     setToast({ message, type });
   };
 
-  const handleImageUpload = (event, isEditing = false, colorName = null) => {
+  const handleImageUpload = async (event, isEditing = false, colorName = null) => {
     const files = event.target.files;
     if (!files || files.length === 0) {
       console.log("No file selected");
@@ -610,51 +601,24 @@ const GIFTOWebsite = () => {
     }
 
     setUploadingImage(true);
-    let filesProcessed = 0;
     const newImages = [];
 
-    Array.from(files).forEach((file) => {
+    for (const file of Array.from(files)) {
       if (!file.type.startsWith("image/")) {
         showToast(`Skipped ${file.name} - not an image file.`, "error");
-        filesProcessed++;
-        if (filesProcessed === files.length && newImages.length > 0) {
-          finishUpload(newImages, isEditing, event, colorName);
-        }
-        return;
+        continue;
       }
 
-      const reader = new FileReader();
+      try {
+        const cloudinaryUrl = await uploadToCloudinary(file);
+        newImages.push(cloudinaryUrl);
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        showToast(`Failed to upload ${file.name}`, "error");
+      }
+    }
 
-      reader.onload = (e) => {
-        try {
-          const base64String = e.target?.result;
-          if (base64String) {
-            newImages.push(base64String);
-          }
-          filesProcessed++;
-
-          if (filesProcessed === files.length) {
-            finishUpload(newImages, isEditing, event, colorName);
-          }
-        } catch (error) {
-          console.error("Error processing image:", error);
-          filesProcessed++;
-          if (filesProcessed === files.length && newImages.length > 0) {
-            finishUpload(newImages, isEditing, event, colorName);
-          }
-        }
-      };
-
-      reader.onerror = (error) => {
-        console.error("FileReader error:", error);
-        filesProcessed++;
-        if (filesProcessed === files.length && newImages.length > 0) {
-          finishUpload(newImages, isEditing, event, colorName);
-        }
-      };
-
-      reader.readAsDataURL(file);
-    });
+    finishUpload(newImages, isEditing, event, colorName);
   };
 
   const finishUpload = (newImages, isEditing, event, colorName = null) => {
@@ -1322,9 +1286,9 @@ const GIFTOWebsite = () => {
                 <article key={product.id} className="product-card">
                   <div className="product-image-wrapper">
                     <div className="product-image">
-                      {currentImage && currentImage.startsWith("data:") ? (
+                      {currentImage ? (
                         <>
-                          <img src={currentImage} alt={product.name} />
+                          <img src={getOptimizedImageUrl(currentImage, 500)} alt={product.name} loading="lazy" />
                           {images.length > 1 && (
                             <div className="image-indicator">
                               {currentIdx + 1} / {images.length}

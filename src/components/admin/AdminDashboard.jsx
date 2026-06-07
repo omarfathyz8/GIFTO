@@ -10,6 +10,7 @@ import {
   serverTimestamp,
 } from "firebase/database";
 import { sendAdminNotification, sendRequestFulfilledEmail, sendRequestRejectedEmail, sendShippedEmail } from "../../services/notifications";
+import { uploadToCloudinary } from "../../services/cloudinary";
 import BusinessOverview from "./BusinessOverview";
 import FinancialTracker from "./FinancialTracker";
 import ManageRequests from "./ManageRequests";
@@ -196,7 +197,7 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
     showToast(`Request status updated to ${status}.`, "success");
   };
 
-  const handleImageUpload = (event, isEditing = false, colorName = null) => {
+  const handleImageUpload = async (event, isEditing = false, colorName = null) => {
     const files = event.target.files;
     if (!files || files.length === 0) {
       console.log("No file selected");
@@ -204,51 +205,24 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
     }
 
     setUploadingImage(true);
-    let filesProcessed = 0;
     const newImages = [];
 
-    Array.from(files).forEach((file) => {
+    for (const file of Array.from(files)) {
       if (!file.type.startsWith("image/")) {
         showToast(`Skipped ${file.name} - not an image file.`, "error");
-        filesProcessed++;
-        if (filesProcessed === files.length && newImages.length > 0) {
-          finishUpload(newImages, isEditing, event, colorName);
-        }
-        return;
+        continue;
       }
 
-      const reader = new FileReader();
+      try {
+        const cloudinaryUrl = await uploadToCloudinary(file);
+        newImages.push(cloudinaryUrl);
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        showToast(`Failed to upload ${file.name}`, "error");
+      }
+    }
 
-      reader.onload = (e) => {
-        try {
-          const base64String = e.target?.result;
-          if (base64String) {
-            newImages.push(base64String);
-          }
-          filesProcessed++;
-
-          if (filesProcessed === files.length) {
-            finishUpload(newImages, isEditing, event, colorName);
-          }
-        } catch (error) {
-          console.error("Error processing image:", error);
-          filesProcessed++;
-          if (filesProcessed === files.length && newImages.length > 0) {
-            finishUpload(newImages, isEditing, event, colorName);
-          }
-        }
-      };
-
-      reader.onerror = (error) => {
-        console.error("FileReader error:", error);
-        filesProcessed++;
-        if (filesProcessed === files.length && newImages.length > 0) {
-          finishUpload(newImages, isEditing, event, colorName);
-        }
-      };
-
-      reader.readAsDataURL(file);
-    });
+    finishUpload(newImages, isEditing, event, colorName);
   };
 
   const finishUpload = (newImages, isEditing, event, colorName = null) => {
