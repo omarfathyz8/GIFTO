@@ -11,6 +11,7 @@ import {
 } from "firebase/database";
 import { sendAdminNotification, sendRequestFulfilledEmail, sendRequestRejectedEmail, sendShippedEmail } from "../../services/notifications";
 import BusinessOverview from "./BusinessOverview";
+import FinancialTracker from "./FinancialTracker";
 import ManageRequests from "./ManageRequests";
 import ManageInventory from "./ManageInventory";
 import ManageOrders from "./ManageOrders";
@@ -518,6 +519,8 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
           requests={requests}
           users={users}
         />
+
+        <FinancialTracker allOrders={allOrders} />
 
         <ManageInventory
           products={products}

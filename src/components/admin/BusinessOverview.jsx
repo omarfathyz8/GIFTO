@@ -155,7 +155,7 @@ const BusinessOverview = ({ products, allOrders, requests, users }) => {
             const lowStockProducts = products.filter(p => {
               if (!p.colors || typeof p.colors !== 'object') return false;
               const totalStock = Object.values(p.colors).reduce((sum, color) => sum + (color.stock || 0), 0);
-              return totalStock > 0 && totalStock <= 10;
+              return totalStock > 0 && totalStock <= 5;
             }).length;
             return lowStockProducts > 0 && (
               <li className="insight-info">⏰ <strong>Low Inventory:</strong> {lowStockProducts} products have low stock (≤5 units). Consider reordering soon.</li>
