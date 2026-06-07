@@ -15,9 +15,24 @@ const ManageInventory = ({
   handleUpdateProduct,
   handleDeleteProduct,
   categories,
+  allOrders = [],
 }) => {
   const [newColorName, setNewColorName] = useState("");
   const [editingColorName, setEditingColorName] = useState("");
+
+  const getProductSoldCount = (productName) => {
+    let totalSold = 0;
+    allOrders.forEach(order => {
+      if (order.status === 'delivered' && order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          if (item.name === productName) {
+            totalSold += item.quantity || 0;
+          }
+        });
+      }
+    });
+    return totalSold;
+  };
   return (
     <section className="admin-section">
       <div className="section-title-row centered">
@@ -224,7 +239,12 @@ const ManageInventory = ({
             {products.map((product) => (
               <div key={product.id} className="product-manager-card">
                 <div>
-                  <p className="product-title">{product.name}</p>
+                  <p className="product-title">
+                    {product.name}
+                    <span style={{ fontSize: "0.75em", opacity: 0.6, marginLeft: "8px" }}>
+                      Sold: {getProductSoldCount(product.name)}
+                    </span>
+                  </p>
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     {Object.entries(product.colors || {}).map(([colorName, colorData]) => {
                       const stock = colorData?.stock ?? 0;

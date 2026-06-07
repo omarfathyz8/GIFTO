@@ -536,6 +536,7 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
           handleUpdateProduct={handleUpdateProduct}
           handleDeleteProduct={handleDeleteProduct}
           categories={categories}
+          allOrders={allOrders}
         />
 
         <ManageRequests
