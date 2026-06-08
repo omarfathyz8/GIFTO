@@ -1,0 +1,173 @@
+/* ==================== PROFILE & USER INFO ==================== */
+.profile-display {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.profile-label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.profile-value {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.profile-form-actions,
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.delivery-form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.delivery-form-actions button {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  border-radius: 2rem;
+  transition: all 0.2s ease;
+}
+
+/* ==================== CUSTOMERS & ANALYTICS ==================== */
+.customers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.customer-card {
+  padding: 1.2rem;
+  background: var(--surface-soft);
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+}
+
+.customer-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.customer-name-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.customer-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.member-since,
+.last-seen {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.customer-contact {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.contact-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.35rem;
+}
+
+.contact-link:hover {
+  text-decoration: underline;
+}
+
+.email-link:hover {
+  color: #d65c7a;
+}
+
+.phone-link:hover {
+  color: #4a90e2;
+}
+
+.contact-separator {
+  color: var(--muted);
+  margin: 0 0.25rem;
+}
+
+.address-text {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.customer-stats {
+  display: flex;
+  gap: 2rem;
+  min-width: max-content;
+  align-items: center;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 640px) {
+  .customer-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .customer-stats {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

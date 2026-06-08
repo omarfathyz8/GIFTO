@@ -1,0 +1,343 @@
+/* ==================== ADMIN DASHBOARD STYLES ==================== */
+.admin-dashboard-view {
+  background: linear-gradient(135deg, #fdf6f0 0%, #f4e5d9 45%, #e7d2c4 100%);
+}
+
+.admin-header {
+  background: rgba(139, 69, 19, 0.05);
+  border-bottom: 2px solid var(--accent);
+}
+
+.admin-header .brand-title {
+  font-size: 1.5rem;
+  color: var(--accent);
+}
+
+.admin-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.admin-section {
+  margin-bottom: 2rem;
+}
+
+.admin-section .section-title-row {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.admin-section .section-title-row.centered {
+  text-align: center;
+}
+
+.admin-section .section-title-row h2 {
+  color: var(--accent);
+  font-size: 2rem;
+  margin: 0.5rem 0 0;
+}
+
+.admin-section .section-title-row .eyebrow {
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+/* Admin dashboard grid layout */
+.admin-grid {
+  display: grid;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  grid-auto-rows: max-content;
+}
+
+@media (min-width: 960px) {
+  .admin-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.admin-grid > .admin-card:first-child,
+.admin-grid > .admin-card:nth-child(2) {
+  align-self: start;
+}
+
+/* ==================== ADMIN FORMS & INPUTS ==================== */
+.admin-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-label {
+  display: grid;
+  gap: 0.6rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-input,
+.admin-textarea,
+.admin-label select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-label select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235e2f07' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+.admin-label select:hover {
+  border-color: var(--accent);
+}
+
+.admin-label select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.admin-textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.admin-notice {
+  margin-top: 1rem;
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+/* ==================== ORDER STATUS & ACTIONS ==================== */
+.status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.status-button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.55rem 0.95rem;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.status-button.active,
+.status-button:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* ==================== PRODUCT MANAGER ==================== */
+.product-manager-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.product-manager-form {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.product-manager-form h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.product-manager-form-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.product-manager-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+}
+
+.product-manager-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .product-manager-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .product-manager-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .product-manager-actions button {
+    width: 100%;
+  }
+}
+
+/* Inventory status indicators */
+.inventory-status {
+  padding: 0.1rem 0.7rem;
+  border-radius: 0.6rem;
+  width: fit-content;
+}
+
+.inventory-status.inventory-good {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.inventory-status.inventory-low {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.inventory-status.inventory-out {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+/* ==================== DASHBOARD METRICS ==================== */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.dashboard-card {
+  background: var(--surface);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  text-align: center;
+  border-left: 4px solid var(--accent);
+}
+
+.dashboard-card.highlight {
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.1) 0%, rgba(139, 69, 19, 0.05) 100%);
+  border-left-color: var(--accent-strong);
+}
+
+.metric-label {
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0.5rem 0;
+  min-height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-grid .dashboard-card:nth-child(6) .metric-value {
+  font-size: 1.5rem;
+}
+
+.metric-description {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+}
+
+/* Insights card with tips/warnings */
+.insights-card {
+  background: var(--surface);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  margin-top: 1rem;
+}
+
+.insights-card h3 {
+  color: var(--accent);
+  margin: 0 0 1.5rem;
+  font-size: 1.4rem;
+}
+
+.insights-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.insights-list li {
+  padding: 1rem;
+  border-radius: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.insight-warning {
+  background: rgba(139, 69, 19, 0.15);
+  color: var(--accent-strong);
+  border-left: 4px solid var(--accent);
+}
+
+.insight-info {
+  background: rgba(139, 69, 19, 0.08);
+  color: var(--accent);
+  border-left: 4px solid var(--accent-soft);
+}
+
+.insight-success {
+  background: rgba(22, 163, 74, 0.15);
+  color: #166534;
+  border-left: 4px solid var(--success);
+}
+
+/* Inventory grid layout */
+.admin-inventory-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .admin-inventory-grid {
+    grid-template-columns: 1fr;
+  }
+}

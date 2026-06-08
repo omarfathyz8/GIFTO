@@ -1,0 +1,25 @@
+/* ==================== CSS VARIABLES & ROOT STYLES ==================== */
+:root {
+  /* Color palette */
+  --bg: #f8f0e7;               /* Background page color */
+  --surface: #ffffff;          /* Card & container background */
+  --surface-soft: #fbf5ef;     /* Subtle surface for inputs */
+  --text: #3d2c24;             /* Primary text color */
+  --muted: #7b6455;            /* Secondary text color */
+  --accent: #8b4513;           /* Brand color (saddle brown) */
+  --accent-soft: rgba(139, 69, 19, 0.1);    /* Light accent tint */
+  --accent-strong: #5e2f07;    /* Dark accent for emphasis */
+  --success: #16a34a;          /* Success green */
+  --danger: #dc2626;           /* Error red */
+  --border: rgba(94, 88, 77, 0.16);        /* Border lines */
+  --shadow: 0 24px 80px rgba(71, 46, 21, 0.12);  /* Card shadow */
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Target for smooth scroll navigation to My Orders section */
+#MyOrders {
+  scroll-margin-top: 130px;
+}

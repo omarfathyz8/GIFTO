@@ -19,6 +19,10 @@ import {
 import { sendOrderEmail, submitToGoogleForms, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet, sendRequestConfirmationEmail, sendRequestAdminNotification } from "./services/notifications";
 import { uploadToCloudinary, getOptimizedImageUrl } from "./services/cloudinary";
 import AdminDashboard from "./components/admin/AdminDashboard";
+import { Header, Footer, Toast } from "./components/layout";
+import { categories, ADMIN_EMAIL, FEES } from "./utils/constants";
+import { formatTimestamp, getUserDisplayName, calculateDeliveryTime } from "./utils/formatters";
+import { getColorValue } from "./utils/colorMap";
 import "./App.css";
 
 const GIFTOWebsite = () => {
@@ -85,58 +89,8 @@ const GIFTOWebsite = () => {
   const [budgetInput, setBudgetInput] = useState("");
   const [budgetLimit, setBudgetLimit] = useState("");
 
-  const categories = [
-    "All",
-    "Wallets",
-    "Watches",
-    "Medals",
-    "Flowers",
-    "Accessories",
-    "Notebooks",
-    "Mugs",
-    "Tech Accessories",
-    "Sets",
-  ];
 
-  const colorMap = {
-    "black": "#000000",
-    "blue": "#0000ff",
-    "brown": "#6e330c",
-    "cafe": "#c29567",
-    "cherry": "#de3163",
-    "coral": "#ff7f50",
-    "cream": "#fffdd0",
-    "cyan": "#4ea1d5",
-    "dark brown": "#3f2824",
-    "dark green": "#1b5e20",
-    "gold": "#ffd700",
-    "gray": "#808080",
-    "grey": "#808080",
-    "green": "#008000",
-    "ivory": "#fffff0",
-    "lavender": "#8778b8",
-    "mint": "#98ff98",
-    "mint green": "#98ff98",
-    "navy": "#010157",
-    "off-white": "#f5f1ed",
-    "orange": "#ff8800",
-    "pink": "#ffb6c1",
-    "purple": "#800080",
-    "red": "#ff0000",
-    "rose": "#f894c3",
-    "silver": "#c0c0c0",
-    "teal": "#008080",
-    "white": "#ffffff",
-    "wood": "#dfbf8f",
-    "yellow": "#ffff00",
-  };
-
-  const getColorValue = (colorName) => {
-    const lower = colorName.toLowerCase();
-    return colorMap[lower] || lower;
-  };
-
-  const isAdmin = user?.email === "giftoo.storee@gmail.com";
+  const isAdmin = user?.email === ADMIN_EMAIL;
   const isGuest = !user;
   const canUseCart = Boolean(user);
   const wishlistItems = products.filter((product) => {
@@ -427,13 +381,6 @@ const GIFTOWebsite = () => {
     }
   };
 
-  const calculateDeliveryTime = (createdAt) => {
-    const date = new Date(createdAt);
-    const daysToAdd = date.getHours() < 10 ? 3 : 4;
-    date.setDate(date.getDate() + daysToAdd);
-    date.setHours(10, 0, 0, 0);
-    return date.getTime();
-  };
 
   const handleCheckoutClick = () => {
     if (!user) {
@@ -563,30 +510,11 @@ const GIFTOWebsite = () => {
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
-  const giftBagFee = giftBag ? 20 : 0;
-  const giftMessageFee = giftMessageEnabled ? 10 : 0;
-  const shippingFee = 40;
+  const giftBagFee = giftBag ? FEES.GIFT_BAG : 0;
+  const giftMessageFee = giftMessageEnabled ? FEES.GIFT_MESSAGE : 0;
+  const shippingFee = FEES.SHIPPING;
   const finalTotal = cartTotal + giftBagFee + giftMessageFee + shippingFee;
 
-  const formatTimestamp = (value) => {
-    if (!value) {
-      return "—";
-    }
-    const timestamp = typeof value === "number" ? value : Number(value);
-    if (!Number.isNaN(timestamp)) {
-      return new Date(timestamp).toLocaleString();
-    }
-    return String(value);
-  };
-
-  const getUserDisplayName = () => {
-    const fullName = userProfile?.name || "GUEST";
-    if (fullName === "GUEST") return fullName;
-    const nameParts = fullName.trim().split(/\s+/);
-    return nameParts.length >= 2
-      ? `${nameParts[0]} ${nameParts[nameParts.length - 1]}`
-      : fullName;
-  };
 
   const showToast = (message, type = "success") => {
     if (!message) return;
@@ -1099,97 +1027,23 @@ const GIFTOWebsite = () => {
 
   return (
     <div className="app-shell">
-      <header className="site-header">
-        <div className="header-inner">
-          <div className="brand">
-            <img src={logoImage} alt="GIFTO Logo" className="brand-logo" />
-            <div>
-              <p className="brand-title">GIFTO</p>
-              <p className="brand-subtitle">Make it special ✨</p>
-            </div>
-          </div>
+      <Header
+        user={user}
+        userProfile={userProfile}
+        cart={cart}
+        wishlists={wishlists}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onSignInClick={() => {
+          setAuthMode("login");
+          setAuthOpen(true);
+        }}
+        onProfileClick={() => setShowProfile(true)}
+        onWishlistClick={() => setShowWishlist(true)}
+        onCartClick={() => setShowCart(true)}
+      />
 
-          <div className="header-actions">
-            <label className="search-box">
-              <Search size={22} />
-              <input
-                type="text"
-                aria-label="Search gifts"
-                placeholder="Search gifts"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </label>
-            {user ? (
-              <div className="user-actions">
-                <button
-                  type="button"
-                  className="profile-button small"
-                  onClick={() => setShowProfile(true)}
-                >
-                  {getUserDisplayName(user)}
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="secondary-button small"
-                onClick={() => {
-                  setAuthMode("login");
-                  setAuthOpen(true);
-                }}
-              >
-                Sign In
-              </button>
-            )}
-            {canUseCart && (
-              <button
-                type="button"
-                className="wishlist-toggle"
-                onClick={() => setShowWishlist(true)}
-                aria-label="Open wishlist"
-              >
-                <Heart size={24} />
-                {wishlists.size > 0 && (
-                  <span className="wishlist-badge">
-                    {wishlists.size}
-                  </span>
-                )}
-              </button>
-            )}
-            {canUseCart && (
-              <button
-                type="button"
-                className="cart-toggle"
-                onClick={() => setShowCart(true)}
-              >
-                <ShoppingCart size={24} />
-                {cart.length > 0 && (
-                  <span className="cart-badge">{cart.length}</span>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {toast && (
-        <div
-          className={`toast ${toast.type === "error" ? "toast-error" : "toast-success"}`}
-          role="status"
-          aria-live="polite"
-        >
-          <span>{toast.message}</span>
-          <button
-            type="button"
-            className="toast-close"
-            onClick={dismissToast}
-            aria-label="Dismiss notification"
-          >
-            ×
-          </button>
-        </div>
-      )}
+      <Toast toast={toast} onDismiss={dismissToast} />
 
       <main>
         <section className="hero">
@@ -1219,7 +1073,7 @@ const GIFTOWebsite = () => {
               </button>
               <button
                 type="button"
-                className="secondary-button"
+                className="secondary-button special-request-btn"
                 onClick={() => setShowRequestForm(true)}
               >
                 Specific Request
@@ -2499,48 +2353,7 @@ const GIFTOWebsite = () => {
         </div>
       )}
 
-      <footer className="site-footer">
-        <div className="footer-inner">
-          <div className="footer-column">
-            <h4>Contact</h4>
-            {/* <p>📍 Gamal Abd ElNasser, Cairo</p> */}
-            <p>
-              📧 <a href="mailto:giftoo.storee@gmail.com">giftoo.storee@gmail.com</a>
-            </p>
-            {/* <p>
-              📱 <a href="tel:+201234567890">+201234567890</a>
-            </p> */}
-          </div>
-          <div className="footer-column">
-            <h4>Payment Methods</h4>
-            {/* <p>🔵 Fawry</p> */}
-            {/* <p>📱 Vodafone Cash</p> */}
-            {/* <p>🏦 Bank Transfer</p> */}
-            <p>💵 COD</p>
-          </div>
-          <div className="footer-column">
-            <h4>Social Media</h4>
-            <p>
-              <a href="https://www.facebook.com/profile.php?id=61590815960981" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                Facebook
-              </a>
-            </p>
-            <p>
-              <a href="https://instagram.com/giftoo.storee" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                Instagram
-              </a>
-            </p>
-            <p>
-              <a href="https://tiktok.com/@giftoo.storee" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
-                TikTok
-              </a>
-            </p>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>© 2026 GIFTO. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

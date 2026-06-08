@@ -1,0 +1,318 @@
+/* ==================== BUTTONS ==================== */
+.primary-button,
+.secondary-button,
+.full-width {
+  border: none;
+  border-radius: 999px;
+  padding: 0.8rem 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+/* Main call-to-action button */
+.primary-button {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 16px 30px rgba(139, 69, 19, 0.18);
+}
+
+.primary-button:hover {
+  transform: translateY(-1px);
+  background: var(--accent-strong);
+}
+
+/* Secondary button for less critical actions */
+.secondary-button {
+  background: #fff;
+  color: var(--accent-strong);
+  border: 1px solid rgba(139, 69, 19, 0.12);
+}
+
+.secondary-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(94, 88, 77, 0.12);
+}
+
+.secondary-button.small {
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+}
+
+/* User profile button in header */
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.profile-button {
+  background: rgba(139, 69, 19, 0.15);
+  color: var(--accent-strong);
+  border: none;
+  border-radius: 999px;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+  box-shadow: 0 10px 25px rgba(139, 69, 19, 0.08);
+}
+
+.profile-button:hover {
+  transform: translateY(-1px);
+  background: rgba(139, 69, 19, 0.22);
+  box-shadow: 0 14px 30px rgba(139, 69, 19, 0.12);
+}
+
+/* ==================== AUTHENTICATION FORMS ==================== */
+.auth-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.auth-label {
+  display: grid;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.auth-label input {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+}
+
+.auth-label textarea {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  font-family: inherit;
+  font-size: 1rem;
+  min-height: 4rem;
+  resize: vertical;
+}
+
+.auth-select {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  min-height: 2.75rem;
+  font-size: 1rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.auth-select option {
+  padding: 0.5rem;
+}
+
+.auth-switch {
+  margin-top: 1rem;
+  color: var(--muted);
+}
+
+.link-button {
+  border: none;
+  background: transparent;
+  color: var(--accent-strong);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-message {
+  margin-top: 1rem;
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.loading-state {
+  width: 100%;
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+/* ==================== NOTIFICATIONS & OVERLAYS ==================== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+/* Toast notification message */
+.toast {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 120;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 280px;
+  max-width: 380px;
+  padding: 0.95rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid transparent;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.15);
+  background: #f8fafc;
+  color: #0f172a;
+  animation: toast-slide 220ms ease-out;
+}
+
+.toast-success {
+  background: #ecfdf5;
+  border-color: #34d399;
+  color: #065f46;
+}
+
+.toast-error {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.toast-close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+@keyframes toast-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ==================== MODALS ==================== */
+.modal-card {
+  width: min(520px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.2);
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.6rem;
+  color: var(--text);
+  text-align: center;
+}
+
+.modal-subtitle {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.modal-scrollable {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Order summary in modals */
+.order-summary {
+  margin: 1.5rem 0;
+  padding: 1.2rem 1.4rem;
+  border-radius: 1rem;
+  background: var(--surface-soft);
+  border: 1px solid rgba(139, 69, 19, 0.08);
+}
+
+.summary-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.summary-value {
+  margin: 0.45rem 0 0;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent-strong);
+}
+
+/* ==================== PAYMENT OPTIONS ==================== */
+.payment-options {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease;
+  cursor: pointer;
+}
+
+.payment-option input {
+  accent-color: var(--accent);
+}
+
+.payment-option.selected {
+  border-color: var(--accent);
+  background: rgba(139, 69, 19, 0.05);
+}
+
+.payment-note {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.payment-hint {
+  margin: 1rem 0 1.5rem;
+  color: var(--success);
+  font-weight: 700;
+}

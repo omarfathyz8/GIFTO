@@ -1,0 +1,70 @@
+/* ==================== RESPONSIVE MOBILE STYLES ==================== */
+@media (max-width: 640px) {
+  .header-inner {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .brand {
+    order: 1;
+    width: 100%;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .brand-logo {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .brand-title {
+    font-size: 0.85rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.7rem;
+  }
+
+  .header-actions {
+    order: 4;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .search-box {
+    order: 2;
+    max-width: 70%;
+    margin-top: 0.75rem;
+    flex-basis: 100%;
+    min-width: 220px;
+    justify-content: center;
+  }
+
+  .user-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .profile-button {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .hero,
+  .category-bar,
+  .product-grid,
+  .site-footer,
+  .orders-section {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
