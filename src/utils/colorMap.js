@@ -9,7 +9,7 @@ export const colorMap = {
   "cyan": "#4ea1d5",
   "dark brown": "#3f2824",
   "dark green": "#1b5e20",
-  "gold": "#ffd700",
+  "gold": "#e6c051",
   "gray": "#808080",
   "grey": "#808080",
   "green": "#008000",
