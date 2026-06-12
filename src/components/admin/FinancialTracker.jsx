@@ -1,5 +1,38 @@
 import React, { useState, useEffect } from "react";
 
+const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
+
+const submitExpenseToSheet = async (expenseData) => {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("YOUR_DEPLOYMENT")) {
+    console.warn("Google Apps Script URL not configured");
+    return false;
+  }
+
+  try {
+    const payload = {
+      action: "submitExpense",
+      date: expenseData.date,
+      category: expenseData.category,
+      amount: String(expenseData.amount),
+      description: expenseData.desc,
+    };
+
+    console.log("Sending expense to Google Sheet:", payload);
+
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+    console.log("Expense submission response:", result);
+    return result.success || false;
+  } catch (error) {
+    console.error("Expense submission error:", error);
+    return false;
+  }
+};
+
 const FinancialTracker = ({ allOrders = [] }) => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [data, setData] = useState({
@@ -34,7 +67,7 @@ const FinancialTracker = ({ allOrders = [] }) => {
         date: order.deliveryTime ? new Date(order.deliveryTime).toISOString().split('T')[0] : new Date(order.createdAt).toISOString().split('T')[0],
         amount: order.total || 0,
         payment: order.paymentMethod || 'COD',
-        customer: order.customerName || order.userName || 'Customer',
+        customer: order.name || order.customerName || order.userName || '',
         items: order.items ? order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ') : ''
       }));
 
@@ -45,7 +78,7 @@ const FinancialTracker = ({ allOrders = [] }) => {
 
         if (newSales.length > 0) {
           return {
-            ...prevData,
+        ...prevData,
             sales: [...salesFromOrders]
           };
         }
@@ -80,14 +113,17 @@ const FinancialTracker = ({ allOrders = [] }) => {
       return;
     }
 
+    const expenseRecord = { id: Date.now(), date, amount, category, desc };
+
     const newData = {
       ...data,
       expenses: [
         ...data.expenses,
-        { id: Date.now(), date, amount, category, desc },
+        expenseRecord,
       ],
     };
     saveData(newData);
+    submitExpenseToSheet(expenseRecord);
     form.reset();
     const today = new Date().toISOString().split("T")[0];
     form.expenseDate.value = today;
@@ -110,21 +146,23 @@ const FinancialTracker = ({ allOrders = [] }) => {
       return;
     }
 
+    const inventoryRecord = {
+      id: Date.now(),
+      date,
+      name,
+      vendor,
+      category,
+      qty,
+      cost,
+      sell,
+      notes,
+    };
+
     const newData = {
       ...data,
       inventory: [
         ...data.inventory,
-        {
-          id: Date.now(),
-          date,
-          name,
-          vendor,
-          category,
-          qty,
-          cost,
-          sell,
-          notes,
-        },
+        inventoryRecord,
       ],
     };
     saveData(newData);
@@ -527,37 +565,37 @@ const FinancialTracker = ({ allOrders = [] }) => {
                 </thead>
                 <tbody>
                   {data.sales.map((sale) => (
-                  <tr key={sale.id}>
-                    <td style={tableCellStyle}>
+                    <tr key={sale.id}>
+                      <td style={tableCellStyle}>
                       {new Date(sale.date).toLocaleDateString()}
-                    </td>
-                    <td style={tableCellStyle}>
-                      <span style={{ color: "var(--accent)", fontWeight: "bold" }}>{sale.amount.toLocaleString()}</span>
-                    </td>
-                    <td style={tableCellStyle}>{sale.payment}</td>
-                    <td style={tableCellStyle}>{sale.customer || "-"}</td>
-                    <td style={{ ...tableCellStyle, fontSize: "0.9em" }}>
-                      {sale.items || "-"}
-                    </td>
-                    <td style={tableCellStyle}>
-                      <button
-                        onClick={() => deleteSale(sale.id)}
-                        onMouseEnter={(e) => {
-                          e.target.style.background = "var(--accent-strong)";
-                          e.target.style.transform = "translateY(-2px)";
-                          e.target.style.boxShadow = "0 4px 12px rgba(139, 69, 19, 0.2)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.background = "var(--accent)";
-                          e.target.style.transform = "translateY(0)";
-                          e.target.style.boxShadow = "none";
-                        }}
-                        style={deleteButtonStyle}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
+                      </td>
+                      <td style={tableCellStyle}>
+                        <span style={{ color: "var(--accent)", fontWeight: "bold" }}>{sale.amount.toLocaleString()}</span>
+                      </td>
+                      <td style={tableCellStyle}>{sale.payment}</td>
+                      <td style={tableCellStyle}>{sale.customer || "-"}</td>
+                      <td style={{ ...tableCellStyle, fontSize: "0.9em" }}>
+                        {sale.items || "-"}
+                      </td>
+                      <td style={tableCellStyle}>
+                        <button
+                          onClick={() => deleteSale(sale.id)}
+                          onMouseEnter={(e) => {
+                            e.target.style.background = "var(--accent-strong)";
+                            e.target.style.transform = "translateY(-2px)";
+                            e.target.style.boxShadow = "0 4px 12px rgba(139, 69, 19, 0.2)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = "var(--accent)";
+                            e.target.style.transform = "translateY(0)";
+                            e.target.style.boxShadow = "none";
+                          }}
+                          style={deleteButtonStyle}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
                 ))}
                 </tbody>
               </table>
@@ -701,34 +739,34 @@ const FinancialTracker = ({ allOrders = [] }) => {
                 </thead>
                 <tbody>
                   {data.expenses.map((exp) => (
-                  <tr key={exp.id}>
-                    <td style={tableCellStyle}>
+                      <tr key={exp.id}>
+                        <td style={tableCellStyle}>
                       {new Date(exp.date).toLocaleDateString()}
-                    </td>
-                    <td style={tableCellStyle}>{exp.category}</td>
-                    <td style={tableCellStyle}>
-                      <strong>{exp.amount.toLocaleString()}</strong>
-                    </td>
-                    <td style={tableCellStyle}>{exp.desc}</td>
-                    <td style={tableCellStyle}>
-                      <button
-                        onClick={() => deleteExpense(exp.id)}
-                        onMouseEnter={(e) => {
-                          e.target.style.background = "var(--accent-strong)";
-                          e.target.style.transform = "translateY(-2px)";
-                          e.target.style.boxShadow = "0 4px 12px rgba(139, 69, 19, 0.2)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.background = "var(--accent)";
-                          e.target.style.transform = "translateY(0)";
-                          e.target.style.boxShadow = "none";
-                        }}
-                        style={deleteButtonStyle}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
+                        </td>
+                        <td style={tableCellStyle}>{exp.category}</td>
+                        <td style={tableCellStyle}>
+                          <strong>{exp.amount.toLocaleString()}</strong>
+                        </td>
+                        <td style={tableCellStyle}>{exp.desc}</td>
+                        <td style={tableCellStyle}>
+                          <button
+                            onClick={() => deleteExpense(exp.id)}
+                            onMouseEnter={(e) => {
+                              e.target.style.background = "var(--accent-strong)";
+                              e.target.style.transform = "translateY(-2px)";
+                              e.target.style.boxShadow = "0 4px 12px rgba(139, 69, 19, 0.2)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.background = "var(--accent)";
+                              e.target.style.transform = "translateY(0)";
+                              e.target.style.boxShadow = "none";
+                            }}
+                            style={deleteButtonStyle}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
                 ))}
                 </tbody>
               </table>
