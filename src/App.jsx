@@ -16,7 +16,7 @@ import {
   push,
   serverTimestamp,
 } from "firebase/database";
-import { sendOrderEmail, submitToGoogleForms, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet, sendRequestConfirmationEmail, sendRequestAdminNotification } from "./services/notifications";
+import { sendOrderEmail, submitToGoogleForms, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet, sendRequestConfirmationEmail, sendRequestAdminNotification, submitRequestToGoogleSheet } from "./services/notifications";
 import { uploadToCloudinary, getOptimizedImageUrl } from "./services/cloudinary";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import { Header, Footer, Toast } from "./components/layout";
@@ -844,6 +844,7 @@ const GIFTOWebsite = () => {
 
       sendRequestConfirmationEmail(requestData);
       sendRequestAdminNotification(requestData);
+      submitRequestToGoogleSheet(requestData);
 
       setRequestForm({
         itemName: "",
@@ -856,6 +857,7 @@ const GIFTOWebsite = () => {
       setShowRequestForm(false);
       showToast("Thank you! Your request has been submitted.", "success");
     } catch (error) {
+      console.error("Request submission error:", error);
       showToast("Failed to submit request. Please try again.", "error");
     }
   };

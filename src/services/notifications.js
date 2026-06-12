@@ -688,3 +688,55 @@ export const sendShippedEmail = async (orderData, customerEmail) => {
     return false;
   }
 };
+
+export const submitRequestToGoogleSheet = async (requestData) => {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("YOUR_DEPLOYMENT")) {
+    console.warn("Google Apps Script URL not configured - skipping sheet update");
+    return true;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const requestId = `REQ_${Date.now().toString().slice(-8)}`;
+    const timestamp = new Date().toLocaleString();
+
+    const payload = {
+      action: "submitRequest",
+      requestId: requestId,
+      timestamp: timestamp,
+      itemName: String(requestData.itemName || ""),
+      category: String(requestData.category || ""),
+      email: String(requestData.email || ""),
+      description: String(requestData.description || ""),
+      budgetMin: requestData.budgetMin ? String(requestData.budgetMin) : "",
+      budgetMax: requestData.budgetMax ? String(requestData.budgetMax) : "",
+      status: "pending",
+    };
+
+    console.log("Sending to Google Sheet:", payload);
+
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      signal: controller.signal,
+      body: JSON.stringify(payload),
+    });
+
+    clearTimeout(timeoutId);
+
+    const result = await response.json();
+    console.log("Google Sheet response:", result);
+
+    if (!response.ok) {
+      console.error("Google Sheet submission failed:", result);
+      return false;
+    }
+
+    console.log("Request submitted to Google Sheet successfully");
+    return true;
+  } catch (error) {
+    console.error("Sheet update error:", error);
+    return true;
+  }
+};
