@@ -1134,7 +1134,7 @@ const GIFTOWebsite = () => {
           {loadingProducts ? (
             <p className="loading-state">Loading products…</p>
           ) : filteredProducts.length === 0 ? (
-            <p className="loading-state">No products available yet.</p>
+            <p className="loading-state">New products coming soon!</p>
           ) : (
             (() => {
               const sorted = filteredProducts.sort((a, b) => {
@@ -1305,7 +1305,7 @@ const GIFTOWebsite = () => {
             {loadingOrders ? (
               <p className="loading-state">Loading your orders…</p>
             ) : orders.length === 0 ? (
-              <p className="loading-state">You have no orders yet.</p>
+              <p className="loading-state">Make your first order NOW!</p>
             ) : (
               orders.map((order, index) => (
                 <article key={order.dbKey} className="order-card">
@@ -1333,7 +1333,10 @@ const GIFTOWebsite = () => {
                     {order.paymentMethod.toUpperCase()}
                   </p>
                   <p className="order-summary-text">
-                    Gift bag: {order.giftBag ? "Yes" : "No"}
+                    Gift bag: {order.giftBag ? "Yes" : "No"} • Gift box: {order.giftBox ? "Yes" : "No"}
+                  </p>
+                  <p className="order-summary-text">
+                    {order.freeShipping ? `Shipping: Free - ${order.metroStation}` : "Shipping: 40 LE"}
                   </p>
                   {order.cardMessage ? (
                     <p className="order-summary-text">
@@ -2010,7 +2013,7 @@ const GIFTOWebsite = () => {
                 </div>
                 <div className="profile-field">
                   <p className="profile-label">Orders Made</p>
-                  <p className="profile-value">{userProfile?.ordersCount ? userProfile.ordersCount : "No orders yet"}</p>
+                  <p className="profile-value">{userProfile?.ordersCount ? userProfile.ordersCount : "Make your first order now!"}</p>
                 </div>
                 <div className="profile-field">
                   <p className="profile-label">Member since</p>

@@ -2,6 +2,15 @@ import React, { useState, useEffect } from "react";
 
 const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
 
+const formatDate = (dateString) => {
+  if (!dateString) return "—";
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 const submitExpenseToSheet = async (expenseData) => {
   if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("YOUR_DEPLOYMENT")) {
     console.warn("Google Apps Script URL not configured");
@@ -9,9 +18,15 @@ const submitExpenseToSheet = async (expenseData) => {
   }
 
   try {
+    const dateObj = new Date(expenseData.date);
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const year = dateObj.getFullYear();
+    const formattedDate = `${day}/${month}/${year}`;
+
     const payload = {
       action: "submitExpense",
-      date: expenseData.date,
+      date: formattedDate,
       category: expenseData.category,
       amount: String(expenseData.amount),
       description: expenseData.desc,
@@ -741,7 +756,7 @@ const FinancialTracker = ({ allOrders = [] }) => {
                   {data.expenses.map((exp) => (
                       <tr key={exp.id}>
                         <td style={tableCellStyle}>
-                      {new Date(exp.date).toLocaleDateString()}
+                      {formatDate(exp.date)}
                         </td>
                         <td style={tableCellStyle}>{exp.category}</td>
                         <td style={tableCellStyle}>

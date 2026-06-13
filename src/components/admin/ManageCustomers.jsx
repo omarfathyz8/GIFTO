@@ -1,4 +1,18 @@
 import React from "react";
+import { ADMIN_EMAIL } from "../../utils/constants";
+
+const formatDate = (timestamp) => {
+  if (!timestamp) return "—";
+  const date = new Date(timestamp);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  const hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+  return `${day}/${month}/${year} ${displayHours}:${minutes} ${ampm}`;
+};
 
 const ManageCustomers = ({ users, allOrders }) => {
   const getCustomerOrders = (userId) => {
@@ -16,7 +30,9 @@ const ManageCustomers = ({ users, allOrders }) => {
     return getCustomerOrders(userId).length;
   };
 
-  const customersWithOrders = users.filter(user => getOrderCount(user.uid) > 0);
+  const filteredCustomers = users.filter(user =>
+    user.email !== ADMIN_EMAIL && user.name !== "TESTER"
+  );
 
   return (
     <section className="admin-section">
@@ -27,21 +43,21 @@ const ManageCustomers = ({ users, allOrders }) => {
       </div>
 
       <div className="admin-card">
-        {customersWithOrders.length === 0 ? (
+        {filteredCustomers.length === 0 ? (
           <p className="loading-state">No customers yet.</p>
         ) : (
           <div className="customers-list">
-            {customersWithOrders.map((user) => (
+            {filteredCustomers.map((user) => (
               <div key={user.uid} className="customer-card">
                 <div className="customer-info">
                   <div>
                     <div className="customer-name-row">
                       <p className="customer-name">{user.name || "No name"}</p>
                       {user.createdAt && (
-                        <span className="member-since">Member since {new Date(user.createdAt).toLocaleDateString()}</span>
+                        <span className="member-since">Member since {formatDate(user.createdAt)}</span>
                       )}
                       {user.lastSeen && (
-                        <span className="last-seen">Last seen: {new Date(user.lastSeen).toLocaleDateString()} {new Date(user.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="last-seen">Last seen: {formatDate(user.lastSeen)}</span>
                       )}
                     </div>
                     <div className="customer-contact">

@@ -1,14 +1,15 @@
 export const categories = [
   "All",
-  "Wallets",
-  "Watches",
-  "Medals",
-  "Flowers",
-  "Accessories",
-  "Notebooks",
-  "Mugs",
-  "Tech Accessories",
   "Sets",
+  "Flowers",
+  "Wallets",
+  "Accessories",
+  "Medals",
+  "Mugs",
+  "Watches",
+  "Notebooks",
+  "Tech Accessories",
+  "Decor",
 ];
 
 export const ADMIN_EMAIL = "giftoo.storee@gmail.com";
@@ -22,12 +23,12 @@ export const FEES = {
 
 export const METRO_STATIONS = [
   "Adly Mansour",
-  "El Haykestep",
+  "Haykestep",
   "Omar Ibn El-Khattab",
-  "Qobaa",
+  "Qubaa",
   "Hesham Barakat",
   "El-Nozha",
-  "Nadi El-Shams",
+  "El-Shams Club",
   "Alf Maskan",
   "Heliopolis",
   "Haroun",

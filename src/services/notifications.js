@@ -631,9 +631,20 @@ export const sendShippedEmail = async (orderData, customerEmail) => {
       .map((item) => `<li>${item.name} (x${item.quantity}) - ${item.price * item.quantity} LE</li>`)
       .join("");
 
-    const deliveryDate = orderData.deliveryTime
-      ? new Date(orderData.deliveryTime).toLocaleString()
-      : "TBD";
+    const getFormattedDate = (timestamp) => {
+      if (!timestamp) return "TBD";
+      const date = new Date(timestamp);
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      const hours = date.getHours();
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      const displayHours = hours % 12 || 12;
+      return `${day}/${month}/${year} ${displayHours}:${minutes} ${ampm}`;
+    };
+
+    const deliveryDate = getFormattedDate(orderData.deliveryTime);
 
     const htmlContent = `
       <h2>Your Order is on the Way! 📦</h2>
@@ -651,7 +662,7 @@ export const sendShippedEmail = async (orderData, customerEmail) => {
 
       <h3>Delivery Information</h3>
       <p><strong>Delivery on</strong> ${deliveryDate}</p>
-      <p><strong>Delivery Address:</strong> ${orderData.address}</p>
+      <p><strong>Delivery Address:</strong> ${orderData.freeShipping && orderData.metroStation ? orderData.metroStation : orderData.address}</p>
 
       <p>You can track your order status anytime at: <a href="https://giftoo-storee.vercel.app" style="color: #8b4513;">GIFTO Store</a></p>
 

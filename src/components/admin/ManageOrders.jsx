@@ -1,5 +1,6 @@
 import React from "react";
 import { Edit2 } from "lucide-react";
+import { formatTimestamp } from "../../utils/formatters";
 
 const OrderCard = ({ order, showDeliveryEdit = false, onDeliveryEdit = null, onStatusChange = null, showStatusActions = false, statuses = [] }) => (
   <article className="order-manager-card">
@@ -18,17 +19,18 @@ const OrderCard = ({ order, showDeliveryEdit = false, onDeliveryEdit = null, onS
         </p>
         {order.deliveryTime && !showDeliveryEdit && (
           <p className="order-meta">
-            {order.status === "delivered" ? "Delivered" : "Delivery"} on {new Date(order.deliveryTime).toLocaleString()}
+            {order.status === "delivered" ? "Delivered" : "Delivery"} on {formatTimestamp(order.deliveryTime)}
           </p>
         )}
-        {order.giftBag && (
-          <p className="order-summary-text">Gift Bag: Yes</p>
-        )}
-        {order.giftBox && (
-          <p className="order-summary-text">Gift Box: Yes</p>
+        {(order.giftBag || order.giftBox) && (
+          <p className="order-summary-text">
+            {order.giftBag && "Gift Bag: Yes"}
+            {order.giftBag && order.giftBox && " • "}
+            {order.giftBox && "Gift Box: Yes"}
+          </p>
         )}
         {order.freeShipping && order.metroStation && (
-          <p className="order-summary-text">Free Shipping: {order.metroStation}</p>
+          <p className="order-summary-text">Shipping: {order.metroStation}</p>
         )}
         {order.cardMessage && (
           <p className="order-summary-text">
@@ -38,7 +40,7 @@ const OrderCard = ({ order, showDeliveryEdit = false, onDeliveryEdit = null, onS
         {order.deliveryTime && showDeliveryEdit && (
           <div className="order-meta-with-edit">
             <p className="order-meta">
-              Delivery on {new Date(order.deliveryTime).toLocaleString()}
+              Delivery on {formatTimestamp(order.deliveryTime)}
             </p>
             <button
               type="button"

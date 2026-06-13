@@ -4,7 +4,15 @@ export const formatTimestamp = (value) => {
   }
   const timestamp = typeof value === "number" ? value : Number(value);
   if (!Number.isNaN(timestamp)) {
-    return new Date(timestamp).toLocaleString();
+    const date = new Date(timestamp);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const displayHours = hours % 12 || 12;
+    return `${day}/${month}/${year} ${displayHours}:${minutes} ${ampm}`;
   }
   return String(value);
 };
@@ -20,8 +28,17 @@ export const getUserDisplayName = (userProfile) => {
 
 export const calculateDeliveryTime = (createdAt) => {
   const date = new Date(createdAt);
-  const daysToAdd = date.getHours() < 10 ? 3 : 4;
+  const daysToAdd = date.getHours() < 9 ? 2 : 3;
   date.setDate(date.getDate() + daysToAdd);
-  date.setHours(10, 0, 0, 0);
-  return date.getTime();
+  date.setHours(18, 0, 0, 0);
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  const hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+
+  return `${day}/${month}/${year} ${displayHours}:${minutes} ${ampm}`;
 };
