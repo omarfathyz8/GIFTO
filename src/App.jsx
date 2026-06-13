@@ -20,7 +20,7 @@ import { sendOrderEmail, submitToGoogleForms, sendAdminNotification, sendCancell
 import { uploadToCloudinary, getOptimizedImageUrl } from "./services/cloudinary";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import { Header, Footer, Toast } from "./components/layout";
-import { categories, ADMIN_EMAIL, FEES } from "./utils/constants";
+import { categories, ADMIN_EMAIL, FEES, METRO_STATIONS } from "./utils/constants";
 import { formatTimestamp, getUserDisplayName, calculateDeliveryTime } from "./utils/formatters";
 import { getColorValue } from "./utils/colorMap";
 import "./App.css";
@@ -32,8 +32,11 @@ const GIFTOWebsite = () => {
   const [showCheckout, setShowCheckout] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [giftBag, setGiftBag] = useState(false);
+  const [giftBox, setGiftBox] = useState(false);
   const [giftMessageEnabled, setGiftMessageEnabled] = useState(false);
   const [giftMessage, setGiftMessage] = useState("");
+  const [freeShipping, setFreeShipping] = useState(false);
+  const [metroStation, setMetroStation] = useState("");
   const [wishlists, setWishlists] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(null);
@@ -387,6 +390,10 @@ const GIFTOWebsite = () => {
       setAuthOpen(true);
       return;
     }
+    if (freeShipping && !metroStation) {
+      showToast("Please select a metro station for free shipping.", "error");
+      return;
+    }
     setShowCart(false);
     setShowCheckout(true);
   };
@@ -511,9 +518,10 @@ const GIFTOWebsite = () => {
     0,
   );
   const giftBagFee = giftBag ? FEES.GIFT_BAG : 0;
+  const giftBoxFee = giftBox ? FEES.GIFT_BOX : 0;
   const giftMessageFee = giftMessageEnabled ? FEES.GIFT_MESSAGE : 0;
-  const shippingFee = FEES.SHIPPING;
-  const finalTotal = cartTotal + giftBagFee + giftMessageFee + shippingFee;
+  const shippingFee = freeShipping ? 0 : FEES.SHIPPING;
+  const finalTotal = cartTotal + giftBagFee + giftBoxFee + giftMessageFee + shippingFee;
 
 
   const showToast = (message, type = "success") => {
@@ -934,7 +942,10 @@ const GIFTOWebsite = () => {
       total: finalTotal,
       paymentMethod,
       giftBag,
+      giftBox,
       cardMessage: giftMessage,
+      freeShipping,
+      metroStation: freeShipping ? metroStation : null,
       status: "pending",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -952,6 +963,9 @@ const GIFTOWebsite = () => {
     setShowCheckout(false);
     setGiftMessage("");
     setGiftBag(false);
+    setGiftBox(false);
+    setFreeShipping(false);
+    setMetroStation("");
     setPaymentMethod("cod");
     showToast("Order placed! Check My Orders for details.", "success");
 
@@ -1537,6 +1551,14 @@ const GIFTOWebsite = () => {
                   <label className="checkbox-label">
                     <input
                       type="checkbox"
+                      checked={giftBox}
+                      onChange={(e) => setGiftBox(e.target.checked)}
+                    />
+                    Gift Box (+20 LE)
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
                       checked={giftMessageEnabled}
                       onChange={(e) => {
                         const enabled = e.target.checked;
@@ -1558,6 +1580,43 @@ const GIFTOWebsite = () => {
                       />
                     </label>
                   )}
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={freeShipping}
+                      onChange={(e) => {
+                        setFreeShipping(e.target.checked);
+                        if (!e.target.checked) {
+                          setMetroStation("");
+                        }
+                      }}
+                    />
+                    Free Shipping to Metro Station (-40 LE)
+                  </label>
+                  {freeShipping && (
+                    <label className="admin-label">
+                      <select
+                        value={metroStation}
+                        onChange={(e) => setMetroStation(e.target.value)}
+                        required
+                        style={{
+                          width: "100%",
+                          padding: "10px",
+                          border: "1px solid var(--border)",
+                          borderRadius: "8px",
+                          color: "var(--text)",
+                          backgroundColor: "var(--surface)",
+                        }}
+                      >
+                        <option value="">Select a metro station...</option>
+                        {METRO_STATIONS.map((station) => (
+                          <option key={station} value={station}>
+                            {station}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                 </div>
 
                 <div className="cart-summary">
@@ -1571,16 +1630,29 @@ const GIFTOWebsite = () => {
                       <span>20 LE</span>
                     </div>
                   )}
+                  {giftBox && (
+                    <div className="summary-row">
+                      <span>Gift Box</span>
+                      <span>20 LE</span>
+                    </div>
+                  )}
                   {giftMessageEnabled && (
                     <div className="summary-row">
                       <span>Gift message</span>
                       <span>10 LE</span>
                     </div>
                   )}
-                  <div className="summary-row">
-                    <span>Shipping</span>
-                    <span>40 LE</span>
-                  </div>
+                  {freeShipping ? (
+                    <div className="summary-row">
+                      <span>Shipping</span>
+                      <span>FREE</span>
+                    </div>
+                  ) : (
+                    <div className="summary-row">
+                      <span>Shipping</span>
+                      <span>40 LE</span>
+                    </div>
+                  )}
                   <div className="summary-row total-row">
                     <span>Total</span>
                     <span>{finalTotal} LE</span>

@@ -88,8 +88,9 @@ export const sendOrderEmail = async (orderData, customerEmail) => {
       <h3>Order Summary</h3>
       <p><strong>Subtotal:</strong> ${orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0)} LE</p>
       ${orderData.giftBag ? `<p><strong>Gift Bag:</strong> 20 LE</p>` : ""}
+      ${orderData.giftBox ? `<p><strong>Gift Box:</strong> 20 LE</p>` : ""}
       ${orderData.cardMessage ? `<p><strong>Gift Message:</strong> 10 LE (${orderData.cardMessage})</p>` : ""}
-      <p><strong>Shipping:</strong> 40 LE</p>
+      ${orderData.freeShipping ? `<p><strong>Shipping:</strong> Free - ${orderData.metroStation}</p>` : `<p><strong>Shipping:</strong> 40 LE</p>`}
       <p><strong>Total:</strong> ${orderData.total} LE</p>
 
       <p><strong>Payment Method:</strong> ${orderData.paymentMethod.toUpperCase()}</p>
@@ -163,6 +164,8 @@ export const sendAdminNotification = async (orderData, customerEmail) => {
       <p><strong>Total:</strong> ${orderData.total} LE</p>
       <p><strong>Payment Method:</strong> ${orderData.paymentMethod.toUpperCase()}</p>
       <p><strong>Gift Bag:</strong> ${orderData.giftBag ? "Yes" : "No"}</p>
+      <p><strong>Gift Box:</strong> ${orderData.giftBox ? "Yes" : "No"}</p>
+      ${orderData.freeShipping ? `<p><strong>Shipping:</strong> Free - ${orderData.metroStation}</p>` : ""}
       ${orderData.cardMessage ? `<p><strong>Message:</strong> ${orderData.cardMessage}</p>` : ""}
     `;
 
@@ -227,6 +230,7 @@ export const sendCancellationEmail = async (orderData, customerEmail) => {
       <h3>Refund Summary</h3>
       <p><strong>Subtotal:</strong> ${subtotal} LE</p>
       ${orderData.giftBag ? `<p><strong>Gift Bag:</strong> 20 LE (refunded)</p>` : ""}
+      ${orderData.giftBox ? `<p><strong>Gift Box:</strong> 20 LE (refunded)</p>` : ""}
       ${orderData.cardMessage ? `<p><strong>Gift Message:</strong> 10 LE (refunded)</p>` : ""}
       <p><strong>Shipping:</strong> 40 LE (refunded)</p>
       <p><strong>Total Refund:</strong> ${orderData.total} LE</p>
@@ -307,6 +311,7 @@ export const sendCancellationAdminNotification = async (orderData, customerEmail
       <h3>Refund Summary</h3>
       <p><strong>Subtotal:</strong> ${subtotal} LE</p>
       ${orderData.giftBag ? `<p><strong>Gift Bag:</strong> 20 LE (refunded)</p>` : ""}
+      ${orderData.giftBox ? `<p><strong>Gift Box:</strong> 20 LE (refunded)</p>` : ""}
       ${orderData.cardMessage ? `<p><strong>Gift Message:</strong> 10 LE (refunded)</p>` : ""}
       <p><strong>Shipping:</strong> 40 LE (refunded)</p>
       <p><strong>Total Refund Amount:</strong> ${orderData.total} LE</p>

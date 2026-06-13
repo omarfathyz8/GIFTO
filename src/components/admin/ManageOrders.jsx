@@ -24,6 +24,12 @@ const OrderCard = ({ order, showDeliveryEdit = false, onDeliveryEdit = null, onS
         {order.giftBag && (
           <p className="order-summary-text">Gift Bag: Yes</p>
         )}
+        {order.giftBox && (
+          <p className="order-summary-text">Gift Box: Yes</p>
+        )}
+        {order.freeShipping && order.metroStation && (
+          <p className="order-summary-text">Free Shipping: {order.metroStation}</p>
+        )}
         {order.cardMessage && (
           <p className="order-summary-text">
             Message Card: {order.cardMessage}
