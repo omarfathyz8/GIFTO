@@ -756,3 +756,112 @@ export const submitRequestToGoogleSheet = async (requestData) => {
     return true;
   }
 };
+
+export const updateOrderStatusInSheet = async (orderId, newStatus) => {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("YOUR_DEPLOYMENT")) {
+    console.warn("Google Apps Script URL not configured - skipping sheet update");
+    return true;
+  }
+
+  try {
+    const payload = {
+      action: "updateOrderStatus",
+      orderId: String(orderId),
+      status: String(newStatus),
+    };
+
+    console.log("Updating order status in Google Sheet:", payload);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      signal: controller.signal,
+      body: JSON.stringify(payload),
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log(`Order ${orderId} status updated to ${newStatus} in Google Sheet`);
+      return true;
+    } else {
+      console.warn("Sheet update returned non-OK status:", response.status);
+      return true;
+    }
+  } catch (error) {
+    console.warn("Sheet update error (non-blocking):", error.message);
+    return true;
+  }
+};
+
+export const submitOrderToGoogleSheet = async (orderData, customerEmail) => {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("YOUR_DEPLOYMENT")) {
+    console.warn("Google Apps Script URL not configured - skipping sheet update");
+    return true;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const getFormattedTimestamp = () => {
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, "0");
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const year = now.getFullYear();
+      const hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      const displayHours = hours % 12 || 12;
+      return `${day}/${month}/${year} ${displayHours}:${minutes} ${ampm}`;
+    };
+
+    const timestamp = getFormattedTimestamp();
+
+    const payload = {
+      action: "submitOrder",
+      timestamp: timestamp,
+      orderId: String(orderData.id),
+      name: String(orderData.name || ""),
+      email: String(customerEmail || ""),
+      phone: String(orderData.phone || ""),
+      address: String(orderData.address || ""),
+      items: orderData.items ? orderData.items.map((i) => `${i.name} (x${i.quantity})`).join(", ") : "",
+      total: String(orderData.total || ""),
+      paymentMethod: String(orderData.paymentMethod || ""),
+      giftBag: orderData.giftBag ? "Yes" : "No",
+      giftBox: orderData.giftBox ? "Yes" : "No",
+      cardMessage: String(orderData.cardMessage || "None"),
+      freeShipping: orderData.freeShipping ? "Yes" : "No",
+      metroStation: orderData.freeShipping && orderData.metroStation ? String(orderData.metroStation) : "",
+      status: String(orderData.status || "pending"),
+    };
+
+    console.log("Sending order to Google Sheet:", payload);
+
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      signal: controller.signal,
+      body: JSON.stringify(payload),
+    });
+
+    clearTimeout(timeoutId);
+
+    const result = await response.json();
+    console.log("Google Sheet response:", result);
+
+    if (!response.ok) {
+      console.error("Google Sheet submission failed:", result);
+      return false;
+    }
+
+    console.log("Order submitted to Google Sheet successfully");
+    return true;
+  } catch (error) {
+    console.error("Sheet update error:", error);
+    return true;
+  }
+};

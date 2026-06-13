@@ -77,14 +77,32 @@ const FinancialTracker = ({ allOrders = [] }) => {
     // Populate sales data from Firebase orders (only delivered orders)
     if (allOrders && allOrders.length > 0) {
       const deliveredOrders = allOrders.filter(order => order.status === 'delivered');
-      const salesFromOrders = deliveredOrders.map(order => ({
-        id: order.id || order.dbKey,
-        date: order.deliveryTime ? new Date(order.deliveryTime).toISOString().split('T')[0] : new Date(order.createdAt).toISOString().split('T')[0],
-        amount: order.total || 0,
-        payment: order.paymentMethod || 'COD',
-        customer: order.name || order.customerName || order.userName || '',
-        items: order.items ? order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ') : ''
-      }));
+      const salesFromOrders = deliveredOrders.map(order => {
+        let dateStr = new Date().toISOString().split('T')[0];
+
+        if (order.deliveryTime) {
+          try {
+            dateStr = new Date(order.deliveryTime).toISOString().split('T')[0];
+          } catch (e) {
+            dateStr = new Date().toISOString().split('T')[0];
+          }
+        } else if (order.createdAt) {
+          try {
+            dateStr = new Date(order.createdAt).toISOString().split('T')[0];
+          } catch (e) {
+            dateStr = new Date().toISOString().split('T')[0];
+          }
+        }
+
+        return {
+          id: order.id || order.dbKey,
+          date: dateStr,
+          amount: order.total || 0,
+          payment: order.paymentMethod || 'COD',
+          customer: order.name || order.customerName || order.userName || '',
+          items: order.items ? order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ') : ''
+        };
+      });
 
       // Only update if we have new sales data
       setData(prevData => {

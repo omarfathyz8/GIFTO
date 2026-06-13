@@ -16,7 +16,7 @@ import {
   push,
   serverTimestamp,
 } from "firebase/database";
-import { sendOrderEmail, submitToGoogleForms, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet, sendRequestConfirmationEmail, sendRequestAdminNotification, submitRequestToGoogleSheet } from "./services/notifications";
+import { sendOrderEmail, submitOrderToGoogleSheet, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet, sendRequestConfirmationEmail, sendRequestAdminNotification, submitRequestToGoogleSheet } from "./services/notifications";
 import { uploadToCloudinary, getOptimizedImageUrl } from "./services/cloudinary";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import { Header, Footer, Toast } from "./components/layout";
@@ -1001,7 +1001,7 @@ const GIFTOWebsite = () => {
 
         sendOrderEmail(orderData, user.email);
         sendAdminNotification(orderData, user.email);
-        submitToGoogleForms(orderData, user.email);
+        submitOrderToGoogleSheet(orderData, user.email);
       } catch (error) {
         console.error("Order creation error:", error);
       }

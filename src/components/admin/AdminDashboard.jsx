@@ -9,7 +9,7 @@ import {
   push,
   serverTimestamp,
 } from "firebase/database";
-import { sendAdminNotification, sendRequestFulfilledEmail, sendRequestRejectedEmail, sendShippedEmail } from "../../services/notifications";
+import { sendAdminNotification, sendRequestFulfilledEmail, sendRequestRejectedEmail, sendShippedEmail, updateOrderStatusInSheet } from "../../services/notifications";
 import { uploadToCloudinary } from "../../services/cloudinary";
 import BusinessOverview from "./BusinessOverview";
 import FinancialTracker from "./FinancialTracker";
@@ -408,6 +408,8 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
     }
 
     showToast(`Order status updated to ${status}.`, "success");
+
+    updateOrderStatusInSheet(order.id, status).catch(err => console.error("Sheet error:", err));
   };
 
   const updateDeliveryTime = async (orderKey) => {
