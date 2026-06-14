@@ -9,7 +9,7 @@ import {
   push,
   serverTimestamp,
 } from "firebase/database";
-import { sendAdminNotification, sendRequestFulfilledEmail, sendRequestRejectedEmail, sendShippedEmail, updateOrderStatusInSheet } from "../../services/notifications";
+import { sendAdminNotification, sendRequestFulfilledEmail, sendRequestRejectedEmail, sendShippedEmail, updateOrderStatusInSheet, recordDeliveredOrderToRevenue } from "../../services/notifications";
 import { uploadToCloudinary } from "../../services/cloudinary";
 import BusinessOverview from "./BusinessOverview";
 import FinancialTracker from "./FinancialTracker";
@@ -405,6 +405,10 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
       if (userEmail) {
         sendShippedEmail(order, userEmail);
       }
+    }
+
+    if (status === "delivered") {
+      recordDeliveredOrderToRevenue(order).catch(err => console.error("Revenue recording error:", err));
     }
 
     showToast(`Order status updated to ${status}.`, "success");

@@ -797,6 +797,60 @@ export const updateOrderStatusInSheet = async (orderId, newStatus) => {
   }
 };
 
+export const recordDeliveredOrderToRevenue = async (orderData) => {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("YOUR_DEPLOYMENT")) {
+    console.warn("Google Apps Script URL not configured - skipping revenue recording");
+    return true;
+  }
+
+  try {
+    const getFormattedTimestamp = () => {
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, "0");
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const year = now.getFullYear();
+      const hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      const displayHours = hours % 12 || 12;
+      return `${day}/${month}/${year} ${displayHours}:${minutes} ${ampm}`;
+    };
+
+    const payload = {
+      action: "recordRevenue",
+      timestamp: getFormattedTimestamp(),
+      amount: String(orderData.total || ""),
+      paymentMethod: String(orderData.paymentMethod || ""),
+      customer: String(orderData.name || ""),
+      items: orderData.items ? orderData.items.map((i) => `${i.name} (x${i.quantity})`).join(", ") : "",
+    };
+
+    console.log("Recording revenue in Google Sheet:", payload);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      signal: controller.signal,
+      body: JSON.stringify(payload),
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      console.log("Revenue recorded in Google Sheet");
+      return true;
+    } else {
+      console.warn("Sheet revenue recording returned non-OK status:", response.status);
+      return true;
+    }
+  } catch (error) {
+    console.warn("Revenue recording error (non-blocking):", error.message);
+    return true;
+  }
+};
+
 export const submitOrderToGoogleSheet = async (orderData, customerEmail) => {
   if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("YOUR_DEPLOYMENT")) {
     console.warn("Google Apps Script URL not configured - skipping sheet update");
