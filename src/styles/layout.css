@@ -227,6 +227,14 @@
   line-height: 1.8;
 }
 
+.footer-column a {
+  color: var(--muted);
+}
+
+.footer-column a:hover {
+  color: var(--accent);
+}
+
 .social-links {
   display: flex;
   gap: 1rem;
