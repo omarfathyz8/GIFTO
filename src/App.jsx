@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from "react";
-import { ShoppingCart, X, Check, Heart, Search, Upload } from "lucide-react";
+import { ShoppingCart, X, Check, Heart, Search, Upload, Info } from "lucide-react";
 import { auth, db } from "./firebase";
 import logoImage from "./assets/logo.png";
 import {
@@ -1572,6 +1572,10 @@ const GIFTOWebsite = () => {
                       }}
                     />
                     Gift Message (+10 LE)
+                    <div className="info-tooltip-wrapper">
+                      <Info size={18} className="info-icon" />
+                      <span className="tooltip-text">Sending this as a gift? Write a personalized gift message to your recipient</span>
+                    </div>
                   </label>
                   {giftMessageEnabled && (
                     <label className="admin-label gift-message-label">
@@ -1595,6 +1599,10 @@ const GIFTOWebsite = () => {
                       }}
                     />
                     Free Shipping to Metro Station (-40 LE)
+                    <div className="info-tooltip-wrapper">
+                      <Info size={18} className="info-icon" />
+                      <span className="tooltip-text">Enjoy FREE shipping when you choose pickup at one of our selected metro stations!</span>
+                    </div>
                   </label>
                   {freeShipping && (
                     <label className="admin-label">
