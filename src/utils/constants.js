@@ -1,15 +1,15 @@
 export const categories = [
   "All",
-  "Sets",
+  // "Sets",
   "Flowers",
   "Wallets",
   "Accessories",
   "Medals",
   "Mugs",
-  "Watches",
+  // "Watches",
   "Notebooks",
   "Tech Accessories",
-  "Decor",
+  // "Decor",
 ];
 
 export const ADMIN_EMAIL = "giftoo.storee@gmail.com";
@@ -17,7 +17,7 @@ export const ADMIN_EMAIL = "giftoo.storee@gmail.com";
 export const FEES = {
   GIFT_BAG: 20,
   GIFT_BOX: 20,
-  GIFT_MESSAGE: 10,
+  GIFT_MESSAGE: 5,
   SHIPPING: 40,
 };
 

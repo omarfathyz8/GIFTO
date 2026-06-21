@@ -1333,7 +1333,7 @@ const GIFTOWebsite = () => {
                     {order.paymentMethod.toUpperCase()}
                   </p>
                   <p className="order-summary-text">
-                    Gift bag: {order.giftBag ? "Yes" : "No"} • Gift box: {order.giftBox ? "Yes" : "No"}
+                    Gift bag: {order.giftBag ? "Yes" : "No"} {/* • Gift box: {order.giftBox ? "Yes" : "No"} */}
                   </p>
                   <p className="order-summary-text">
                     {order.freeShipping ? `Shipping: Free - ${order.metroStation}` : "Shipping: 40 LE"}
@@ -1551,14 +1551,14 @@ const GIFTOWebsite = () => {
                     />
                     Gift Bag (+20 LE)
                   </label>
-                  <label className="checkbox-label">
+                  {/* <label className="checkbox-label">
                     <input
                       type="checkbox"
                       checked={giftBox}
                       onChange={(e) => setGiftBox(e.target.checked)}
                     />
                     Gift Box (+20 LE)
-                  </label>
+                  </label> */}
                   <label className="checkbox-label">
                     <input
                       type="checkbox"
@@ -1571,7 +1571,7 @@ const GIFTOWebsite = () => {
                         }
                       }}
                     />
-                    Gift Message (+10 LE)
+                    Gift Message (+5 LE)
                     <div className="info-tooltip-wrapper">
                       <Info size={18} className="info-icon" />
                       <span className="tooltip-text">Sending this as a gift? Write a personalized gift message to your recipient</span>
@@ -1641,16 +1641,16 @@ const GIFTOWebsite = () => {
                       <span>20 LE</span>
                     </div>
                   )}
-                  {giftBox && (
+                  {/* {giftBox && (
                     <div className="summary-row">
                       <span>Gift Box</span>
                       <span>20 LE</span>
                     </div>
-                  )}
+                  )} */}
                   {giftMessageEnabled && (
                     <div className="summary-row">
                       <span>Gift message</span>
-                      <span>10 LE</span>
+                      <span>5 LE</span>
                     </div>
                   )}
                   {freeShipping ? (

@@ -514,23 +514,6 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
 
         <FinancialTracker allOrders={allOrders} />
 
-        <ManageInventory
-          products={products}
-          newProduct={newProduct}
-          setNewProduct={setNewProduct}
-          editingProduct={editingProduct}
-          setEditingProduct={setEditingProduct}
-          uploadingImage={uploadingImage}
-          handleImageUpload={handleImageUpload}
-          handleAddProduct={handleAddProduct}
-          handleStartEditProduct={handleStartEditProduct}
-          handleCancelEditProduct={handleCancelEditProduct}
-          handleUpdateProduct={handleUpdateProduct}
-          handleDeleteProduct={handleDeleteProduct}
-          categories={categories}
-          allOrders={allOrders}
-        />
-
         <ManageRequests
           requests={requests}
           updateRequestStatus={updateRequestStatus}
@@ -545,6 +528,23 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
 
         <ManageCustomers
           users={users}
+          allOrders={allOrders}
+        />
+
+        <ManageInventory
+          products={products}
+          newProduct={newProduct}
+          setNewProduct={setNewProduct}
+          editingProduct={editingProduct}
+          setEditingProduct={setEditingProduct}
+          uploadingImage={uploadingImage}
+          handleImageUpload={handleImageUpload}
+          handleAddProduct={handleAddProduct}
+          handleStartEditProduct={handleStartEditProduct}
+          handleCancelEditProduct={handleCancelEditProduct}
+          handleUpdateProduct={handleUpdateProduct}
+          handleDeleteProduct={handleDeleteProduct}
+          categories={categories}
           allOrders={allOrders}
         />
       </main>
