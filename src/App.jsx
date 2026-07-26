@@ -610,27 +610,30 @@ const GIFTOWebsite = () => {
   }, [toast]);
 
   useEffect(() => {
-    const productIds = products
-      .filter((p) => p.images && p.images.length > 1)
-      .map((p) => p.id);
-
-    if (productIds.length === 0) return undefined;
-
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => {
         const updated = { ...prev };
-        productIds.forEach((id) => {
-          const product = products.find((p) => p.id === id);
-          if (product?.images) {
-            updated[id] = ((prev[id] || 0) + 1) % product.images.length;
+
+        products.forEach((product) => {
+          const colors = product.colors || {};
+          const colorNames = Object.keys(colors);
+          const selectedColor = selectedColors[product.id] || colorNames[0];
+          const colorData = colors[selectedColor];
+          const images = colorData?.images || [];
+
+          if (images.length > 1) {
+            updated[product.id] = ((prev[product.id] || 0) + 1) % images.length;
+          } else {
+            updated[product.id] = 0;
           }
         });
+
         return updated;
       });
-    }, 2500);
+    }, 3000);
 
     return () => clearInterval(interval);
-  }, [products]);
+  }, [products, selectedColors]);
 
   const dismissToast = () => setToast(null);
 
