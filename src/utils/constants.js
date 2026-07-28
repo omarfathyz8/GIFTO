@@ -2,14 +2,15 @@ export const categories = [
   "All",
   // "Sets",
   "Bookmarks",
+  "Bookmarks2",
   "Flowers",
   "Wallets",
   "Accessories",
   "Medals",
   "Mugs",
-  // "Watches",
   "Notebooks",
   "Tech Accessories",
+  // "Watches",
   // "Decor",
 ];
 
