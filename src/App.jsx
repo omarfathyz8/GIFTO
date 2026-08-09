@@ -1199,7 +1199,17 @@ const GIFTOWebsite = () => {
                   </div>
                   <p className="product-description">{product.description}</p>
                   <div className="product-meta">
-                    <span className="product-price">{product.price} LE</span>
+                    <div className="price-container">
+                      <span className="product-price">{product.price} LE</span>
+                      {product.oldPrice && (
+                        <>
+                          <span className="product-old-price">{product.oldPrice} LE</span>
+                          <span className="discount-badge">
+                            {Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}% OFF
+                          </span>
+                        </>
+                      )}
+                    </div>
                     {getAvailableInventory(product, selectedColor) > 5 ? null : (
                       <span
                         className={`stock-status ${
