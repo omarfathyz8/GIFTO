@@ -2,19 +2,29 @@
   "rules": {
     "products": {
       ".read": true,
-      ".write": "auth != null && auth.token.email === 'admin@giftstore.com'"
+      ".write": "auth != null && auth.token.email === 'giftoo.storee@gmail.com'",
+      ".indexOn": ["id"]
     },
     "users": {
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'admin@giftstore.com')",
-        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'admin@giftstore.com')"
+        ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'giftoo.storee@gmail.com')",
+        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'giftoo.storee@gmail.com')",
+        ".indexOn": ["email"]
       }
     },
     "orders": {
+      ".read": "auth != null && auth.token.email === 'giftoo.storee@gmail.com'",
       "$orderId": {
-        ".read": "auth != null && (data.child('userId').val() === auth.uid || auth.token.email === 'admin@giftstore.com')",
-        ".write": "auth != null && (newData.child('userId').val() === auth.uid || auth.token.email === 'admin@giftstore.com')"
+        ".read": "auth != null && (data.child('userId').val() === auth.uid || auth.token.email === 'giftoo.storee@gmail.com')",
+        ".write": "auth != null && newData.child('userId').val() === auth.uid && auth.token.email === 'giftoo.storee@gmail.com'"
       }
+    },
+    "requests": {
+      ".read": "auth != null && auth.token.email === 'giftoo.storee@gmail.com'",
+      "$requestId": {
+        ".write": "auth == null || (auth != null && newData.child('userId').val() === auth.uid)"
+      },
+      ".indexOn": ["phone", "userId"]
     }
   }
 }

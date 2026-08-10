@@ -1623,7 +1623,7 @@ const GIFTOWebsite = () => {
                       />
                     </label>
                   )}
-                  <label className="checkbox-label">
+                  {/* <label className="checkbox-label">
                     <input
                       type="checkbox"
                       checked={freeShipping}
@@ -1663,7 +1663,7 @@ const GIFTOWebsite = () => {
                         ))}
                       </select>
                     </label>
-                  )}
+                  )} */}
                 </div>
 
                 <div className="cart-summary">
