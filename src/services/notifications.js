@@ -384,66 +384,6 @@ export const markOrderAsCancelledInSheet = async (orderId) => {
   }
 };
 
-export const sendRequestConfirmationEmail = async (requestData) => {
-  if (!BREVO_API_KEY) {
-    console.warn("Brevo API key not configured");
-    return false;
-  }
-
-  try {
-    const htmlContent = `
-      <h2>Request Received! ✨</h2>
-      <p>Thank you for submitting a specific item request!</p>
-
-      <h3>Your Request Details</h3>
-      <p><strong>Item Name:</strong> ${requestData.itemName}</p>
-      ${requestData.category ? `<p><strong>Category:</strong> ${requestData.category}</p>` : ""}
-      ${requestData.description ? `<p><strong>Description:</strong> ${requestData.description}</p>` : ""}
-      ${requestData.budgetMin || requestData.budgetMax ? `<p><strong>Budget Range:</strong> ${requestData.budgetMin || "No minimum"} - ${requestData.budgetMax || "No maximum"} LE</p>` : ""}
-
-      <h3>What's Next?</h3>
-      <p>Our team will review your request and get back to you.</p>
-
-      <p>You can track the status of your request anytime using your email address at: <a href="https://giftoo-storee.vercel.app" style="color: #8b4513;">Track Your Request</a></p>
-
-      <p>If you have any questions, feel free to reach out to us at <a href="mailto:giftoo.storee@gmail.com">giftoo.storee@gmail.com</a></p>
-
-      <p>Thank you for choosing GIFTO!<br>Best regards,<br>GIFTO Team</p>
-    `;
-
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "api-key": BREVO_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        sender: {
-          name: BREVO_SENDER_NAME,
-          email: BREVO_SENDER_EMAIL,
-        },
-        to: [
-          {
-            email: requestData.email,
-          },
-        ],
-        subject: "Request Received - GIFTO",
-        htmlContent,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error("Brevo API error:", await response.text());
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Error sending request confirmation email:", error);
-    return false;
-  }
-};
-
 export const sendRequestAdminNotification = async (requestData) => {
   if (!BREVO_API_KEY) {
     console.warn("Brevo API key not configured");
@@ -724,10 +664,10 @@ export const submitRequestToGoogleSheet = async (requestData) => {
       timestamp: timestamp,
       itemName: String(requestData.itemName || ""),
       category: String(requestData.category || ""),
-      email: String(requestData.email || ""),
-      description: String(requestData.description || ""),
+      phone: String(requestData.phone || ""),
       budgetMin: requestData.budgetMin ? String(requestData.budgetMin) : "",
       budgetMax: requestData.budgetMax ? String(requestData.budgetMax) : "",
+      description: String(requestData.description || ""),
       status: "pending",
     };
 

@@ -16,7 +16,7 @@ import {
   push,
   serverTimestamp,
 } from "firebase/database";
-import { sendOrderEmail, submitOrderToGoogleSheet, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet, sendRequestConfirmationEmail, sendRequestAdminNotification, submitRequestToGoogleSheet } from "./services/notifications";
+import { sendOrderEmail, submitOrderToGoogleSheet, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet, sendRequestAdminNotification, submitRequestToGoogleSheet } from "./services/notifications";
 import { uploadToCloudinary, getOptimizedImageUrl } from "./services/cloudinary";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import { Header, Footer, Toast } from "./components/layout";
@@ -79,15 +79,15 @@ const GIFTOWebsite = () => {
     itemName: "",
     category: "",
     description: "",
-    email: "",
+    phone: "",
     budgetMin: "",
     budgetMax: "",
   });
   const [showTrackRequest, setShowTrackRequest] = useState(false);
-  const [trackingEmail, setTrackingEmail] = useState("");
+  const [trackingPhone, setTrackingPhone] = useState("");
   const [trackedRequests, setTrackedRequests] = useState([]);
   const [trackingSearched, setTrackingSearched] = useState(false);
-  const [searchedEmail, setSearchedEmail] = useState("");
+  const [searchedPhone, setSearchedPhone] = useState("");
   const [showBudgetFilter, setShowBudgetFilter] = useState(false);
   const [budgetInput, setBudgetInput] = useState("");
   const [budgetLimit, setBudgetLimit] = useState("");
@@ -831,9 +831,9 @@ const GIFTOWebsite = () => {
     event.preventDefault();
     setToast(null);
 
-    const finalEmail = requestForm.email || (user?.email || "");
-    if (!requestForm.itemName || !finalEmail) {
-      showToast("Item name and email are required.", "error");
+    const finalPhone = requestForm.phone || (userProfile?.phone || "");
+    if (!requestForm.itemName || !finalPhone) {
+      showToast("Item name and phone are required.", "error");
       return;
     }
 
@@ -843,7 +843,7 @@ const GIFTOWebsite = () => {
         itemName: requestForm.itemName,
         category: requestForm.category,
         description: requestForm.description,
-        email: finalEmail,
+        phone: finalPhone,
         budgetMin: requestForm.budgetMin ? Number(requestForm.budgetMin) : null,
         budgetMax: requestForm.budgetMax ? Number(requestForm.budgetMax) : null,
         userId: user?.uid || null,
@@ -853,7 +853,6 @@ const GIFTOWebsite = () => {
 
       await set(requestRef, requestData);
 
-      sendRequestConfirmationEmail(requestData);
       sendRequestAdminNotification(requestData);
       submitRequestToGoogleSheet(requestData);
 
@@ -861,7 +860,7 @@ const GIFTOWebsite = () => {
         itemName: "",
         category: "",
         description: "",
-        email: "",
+        phone: "",
         budgetMin: "",
         budgetMax: "",
       });
@@ -877,17 +876,41 @@ const GIFTOWebsite = () => {
     event.preventDefault();
     setToast(null);
 
-    if (!trackingEmail) {
-      showToast("Please enter your email to track requests.", "error");
+    let phoneToTrack = trackingPhone;
+
+    if (!user && !phoneToTrack) {
+      showToast("Please enter your phone number to track requests.", "error");
       return;
     }
 
-    setSearchedEmail(trackingEmail);
+    if (user && !user.phone) {
+      showToast("Please add your phone number to your profile to track requests.", "error");
+      return;
+    }
+
+    if (user) {
+      phoneToTrack = user.phone;
+    }
+
+    setSearchedPhone(phoneToTrack);
     setTrackingSearched(true);
   };
 
   useEffect(() => {
-    if (!trackingSearched || !searchedEmail) {
+    if (showTrackRequest && user && userProfile?.phone && !trackingSearched) {
+      setSearchedPhone(userProfile.phone);
+      setTrackingSearched(true);
+    }
+  }, [showTrackRequest, user, userProfile, trackingSearched]);
+
+  useEffect(() => {
+    if (!trackingSearched) {
+      return undefined;
+    }
+
+    const phoneToQuery = user && userProfile?.phone ? userProfile.phone : searchedPhone;
+
+    if (!phoneToQuery) {
       return undefined;
     }
 
@@ -905,7 +928,7 @@ const GIFTOWebsite = () => {
           .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
         const matching = loadedRequests.filter(
-          (request) => request.email?.toLowerCase() === searchedEmail.toLowerCase()
+          (request) => request.phone === phoneToQuery
         );
         setTrackedRequests(matching);
       },
@@ -915,7 +938,7 @@ const GIFTOWebsite = () => {
     );
 
     return () => unsubscribe();
-  }, [trackingSearched, searchedEmail]);
+  }, [trackingSearched, searchedPhone, user, userProfile]);
 
   const createOrder = async () => {
     if (!user) {
@@ -2163,17 +2186,17 @@ const GIFTOWebsite = () => {
               </div>
               {!user && (
                 <label className="auth-label">
-                  Email
+                  Phone Number
                   <input
-                    type="email"
-                    value={requestForm.email}
+                    type="tel"
+                    value={requestForm.phone}
                     onChange={(e) =>
                       setRequestForm({
                         ...requestForm,
-                        email: e.target.value,
+                        phone: e.target.value,
                       })
                     }
-                    placeholder="your@email.com"
+                    placeholder="e.g., +201234567890"
                     required
                   />
                 </label>
@@ -2194,27 +2217,27 @@ const GIFTOWebsite = () => {
               className="modal-close"
               onClick={() => {
                 setShowTrackRequest(false);
-                setTrackingEmail("");
+                setTrackingPhone("");
                 setTrackedRequests([]);
                 setTrackingSearched(false);
-                setSearchedEmail("");
+                setSearchedPhone("");
               }}
             >
               <X size={24} />
             </button>
             <h2 className="modal-title">Track Your Request</h2>
 
-            {trackedRequests.length === 0 && !user && (
+            {!user && (
               <>
-                <p className="modal-subtitle">Enter your email to check the status of your requests</p>
+                <p className="modal-subtitle">Enter your phone number to check the status of your requests</p>
                 <form className="auth-form" onSubmit={handleTrackRequest}>
                   <label className="auth-label">
-                    Email
+                    Phone Number
                     <input
-                      type="email"
-                      value={trackingEmail}
-                      onChange={(e) => setTrackingEmail(e.target.value)}
-                      placeholder="your@email.com"
+                      type="tel"
+                      value={trackingPhone}
+                      onChange={(e) => setTrackingPhone(e.target.value)}
+                      placeholder="e.g., +201234567890"
                       required
                     />
                   </label>
@@ -2223,14 +2246,18 @@ const GIFTOWebsite = () => {
                   </button>
                 </form>
 
-                {trackingSearched && (
-                  <p className="empty-state">No requests found for this email.</p>
+                {trackingSearched && trackedRequests.length === 0 && (
+                  <p className="empty-state">No requests found for this phone number.</p>
                 )}
               </>
             )}
 
-            {trackedRequests.length === 0 && user && trackingSearched && (
-              <p className="empty-state">No requests found for your email.</p>
+            {user && !trackingSearched && (
+              <p className="modal-subtitle" style={{ textAlign: "center", marginTop: "20px" }}>Loading your requests...</p>
+            )}
+
+            {user && trackedRequests.length === 0 && trackingSearched && (
+              <p className="empty-state" style={{ textAlign: "center", marginTop: "20px" }}>You have no requests till now.</p>
             )}
 
             {trackedRequests.length > 0 && (
