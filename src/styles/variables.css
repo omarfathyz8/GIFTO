@@ -17,6 +17,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Account for fixed countdown banner and sticky header */
+  scroll-padding-top: 130px;
 }
 
 /* Target for smooth scroll navigation to My Orders section */

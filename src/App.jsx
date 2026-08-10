@@ -19,7 +19,7 @@ import {
 import { sendOrderEmail, submitOrderToGoogleSheet, sendAdminNotification, sendCancellationEmail, sendCancellationAdminNotification, markOrderAsCancelledInSheet, sendRequestAdminNotification, submitRequestToGoogleSheet } from "./services/notifications";
 import { uploadToCloudinary, getOptimizedImageUrl } from "./services/cloudinary";
 import AdminDashboard from "./components/admin/AdminDashboard";
-import { Header, Footer, Toast } from "./components/layout";
+import { Header, Footer, Toast, CountdownBanner } from "./components/layout";
 import { categories, ADMIN_EMAIL, FEES, METRO_STATIONS } from "./utils/constants";
 import { formatTimestamp, getUserDisplayName, calculateDeliveryTime } from "./utils/formatters";
 import { getColorValue } from "./utils/colorMap";
@@ -1069,6 +1069,7 @@ const GIFTOWebsite = () => {
 
   return (
     <div className="app-shell">
+      <CountdownBanner />
       <Header
         user={user}
         userProfile={userProfile}

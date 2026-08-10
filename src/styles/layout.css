@@ -1,6 +1,7 @@
 /* ==================== MAIN LAYOUT ==================== */
 .app-shell {
   min-height: 100vh;
+  padding-top: 3.5rem;
   background:
     radial-gradient(
       circle at top left,
@@ -10,10 +11,121 @@
     linear-gradient(135deg, #fdf6f0 0%, #f4e5d9 45%, #e7d2c4 100%);
 }
 
+/* ==================== COUNTDOWN BANNER ==================== */
+.countdown-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: linear-gradient(135deg, #8b4513 0%, #5e2f07 100%);
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 4px 16px rgba(139, 69, 19, 0.15);
+}
+
+.countdown-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.countdown-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.zap-icon {
+  width: 24px;
+  height: 24px;
+  animation: pulse-glow 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0.8));
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+  }
+}
+
+.offer-text {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+}
+
+.countdown-timer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #fff;
+}
+
+.timer-text {
+  font-size: 0.95rem;
+  font-weight: 500;
+  opacity: 0.95;
+}
+
+.time-units {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.time-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 2.5rem;
+}
+
+.time-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+  display: block;
+  animation: tick 0.6s ease-out;
+}
+
+@keyframes tick {
+  0% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.time-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+  margin-top: 0.2rem;
+}
+
 /* ==================== HEADER SECTION ==================== */
 .site-header {
   position: sticky;
-  top: 0;
+  top: 3.5rem;
   z-index: 10;
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(16px);
