@@ -12,6 +12,11 @@ const Footer = () => {
           <p>
             📱 <a href="tel:+201039661326">+201039661326</a>
           </p>
+          <p>
+            💬 <a href="https://wa.me/201039661326" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+              WhatsApp
+            </a>
+          </p>
         </div>
         <div className="footer-column">
           <h4>Payment Methods</h4>
