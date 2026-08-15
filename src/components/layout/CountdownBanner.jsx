@@ -9,6 +9,8 @@ const CountdownBanner = () => {
     seconds: 0,
   });
 
+  const [isExpired, setIsExpired] = useState(false);
+
   useEffect(() => {
     const calculateTimeLeft = () => {
       const targetDate = new Date("2026-08-15T23:59:59").getTime();
@@ -22,8 +24,9 @@ const CountdownBanner = () => {
           minutes: Math.floor((difference / 1000 / 60) % 60),
           seconds: Math.floor((difference / 1000) % 60),
         });
+        setIsExpired(false);
       } else {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setIsExpired(true);
       }
     };
 
@@ -33,7 +36,7 @@ const CountdownBanner = () => {
   }, []);
 
   return (
-    <div className="countdown-banner">
+    <div className={`countdown-banner ${isExpired ? "countdown-expired" : ""}`}>
       <div className="countdown-content">
         <div className="countdown-label">
           <Zap size={18} className="zap-icon" />

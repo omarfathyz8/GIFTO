@@ -1,7 +1,6 @@
 /* ==================== MAIN LAYOUT ==================== */
 .app-shell {
   min-height: 100vh;
-  padding-top: 3.5rem;
   background:
     radial-gradient(
       circle at top left,
@@ -9,6 +8,14 @@
       transparent 35%
     ),
     linear-gradient(135deg, #fdf6f0 0%, #f4e5d9 45%, #e7d2c4 100%);
+}
+
+main {
+  padding-top: 3.5rem;
+}
+
+.countdown-expired ~ header ~ main {
+  padding-top: 0;
 }
 
 /* ==================== COUNTDOWN BANNER ==================== */
@@ -122,6 +129,10 @@
   margin-top: 0.2rem;
 }
 
+.countdown-expired {
+  display: none;
+}
+
 /* ==================== HEADER SECTION ==================== */
 .site-header {
   position: sticky;
@@ -130,6 +141,14 @@
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
+}
+
+.countdown-expired ~ .site-header {
+  top: 0;
+}
+
+.admin-dashboard-view .site-header {
+  top: 0;
 }
 
 .header-inner {
