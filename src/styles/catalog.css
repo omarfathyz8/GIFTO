@@ -116,7 +116,8 @@
 
 .product-meta {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 1.25rem;
@@ -172,7 +173,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   white-space: nowrap;
 }
 
@@ -289,4 +290,50 @@
 .color-circle.active {
   box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent);
   transform: scale(1.1);
+}
+
+/* ==================== PRODUCT RATINGS ==================== */
+.product-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-basis: 100%;
+  margin-top: 0.25rem;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 0.15rem;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.star-filled {
+  color: #fbbf24;
+}
+
+.star-half {
+  color: #fbbf24;
+  opacity: 0.5;
+}
+
+.star-empty {
+  color: #d1d5db;
+}
+
+.rating-number {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.rating-count {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.rating-no-reviews {
+  font-size: 0.9rem;
+  color: var(--muted);
 }

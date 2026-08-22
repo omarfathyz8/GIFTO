@@ -101,6 +101,45 @@ const GIFTOWebsite = () => {
     return colorNames.some((color) => wishlists.has(`${color} ${product.name}`));
   });
 
+  const renderProductRating = (product) => {
+    const rating = product.rating;
+    if (!rating || rating === null || rating === undefined) {
+      return (
+        <div className="product-rating">
+          <p className="rating-no-reviews">No reviews yet</p>
+        </div>
+      );
+    }
+
+    const floorRating = Math.floor(rating);
+    const decimal = rating % 1;
+    const stars = [];
+
+    for (let i = 1; i <= 5; i++) {
+      if (i <= floorRating) {
+        stars.push(<span key={i} className="star-filled">⭐</span>);
+      } else if (i === floorRating + 1 && decimal >= 0.5) {
+        stars.push(<span key={i} className="star-half">⭐</span>);
+      } else {
+        stars.push(<span key={i} className="star-empty">☆</span>);
+      }
+    }
+
+    const ratingCount = product.ratingCount || 0;
+
+    return (
+      <div className="product-rating">
+        <div className="rating-stars">
+          {stars}
+        </div>
+        <span className="rating-number">{rating.toFixed(1)}</span>
+        {ratingCount > 0 && (
+          <span className="rating-count">({ratingCount})</span>
+        )}
+      </div>
+    );
+  };
+
   useEffect(() => {
     const savedWishlist = window.localStorage.getItem("gift-store-wishlist");
     if (savedWishlist) {
@@ -1247,6 +1286,7 @@ const GIFTOWebsite = () => {
                           : `Only ${getAvailableInventory(product, selectedColor)} left`}
                       </span>
                     )}
+                    {renderProductRating(product)}
                     {canUseCart && (
                       <button
                         type="button"
