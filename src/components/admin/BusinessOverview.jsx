@@ -167,9 +167,9 @@ const BusinessOverview = ({ products, users = [] }) => {
         </div>
 
         <div className="dashboard-card highlight">
-          <div className="metric-label">Pending Orders</div>
+          <div className="metric-label">Awaiting Orders</div>
           <div className="metric-value">{pending.length}</div>
-          <div className="metric-description">Awaiting action</div>
+          <div className="metric-description">Pending/Processing action</div>
         </div>
 
         <div className="dashboard-card">
@@ -249,14 +249,18 @@ const BusinessOverview = ({ products, users = [] }) => {
         <h3>Business Insights & Recommendations</h3>
         <ul className="insights-list">
           {pending.length > 5 && (
-            <li className="insight-warning">⚠️ <strong>High Pending Orders:</strong> You have {pending.length} pending orders. Consider processing them to improve delivery times.</li>
+            <li className="insight-warning">
+              ⚠️ <strong>High Pending/Processing Orders:</strong> You have{" "}
+              {pending.length} pending or processing orders. Consider processing
+              them to improve delivery times.
+            </li>
           )}
           {outOfStockCount > 0 && (
             <li className="insight-warning">📦 <strong>Out of Stock Alert:</strong> {outOfStockCount} products are completely out of stock. Restock popular items.</li>
           )}
           {sheetOrders.length > 0 && cancelled.length > sheetOrders.length * 0.1 && (
             <li className="insight-warning">📊 <strong>High Cancellation Rate:</strong> Your cancellation rate is above 10%. Review customer feedback.</li>
-          )}
+            )}
           {lowStockCount > 0 && (
             <li className="insight-info">⏰ <strong>Low Inventory:</strong> {lowStockCount} products have low stock (≤5 units). Consider reordering soon.</li>
           )}
@@ -265,7 +269,7 @@ const BusinessOverview = ({ products, users = [] }) => {
           )}
           {sheetOrders.length > 0 && delivered.length === sheetOrders.length && (
             <li className="insight-success">✅ <strong>Perfect Delivery:</strong> All orders have been delivered! Excellent performance.</li>
-          )}
+            )}
         </ul>
       </div>
     </section>

@@ -866,6 +866,48 @@ const GIFTOWebsite = () => {
     showToast("Your order has been canceled.", "success");
   };
 
+  const handleRateOrderItem = async (orderKey, itemIndex, ratingValue) => {
+    if (!user) {
+      return;
+    }
+
+    const order = orders.find((o) => o.dbKey === orderKey);
+    if (!order || order.status !== "delivered") {
+      return;
+    }
+
+    if (order.ratedItems && order.ratedItems[itemIndex]) {
+      return;
+    }
+
+    const item = order.items[itemIndex];
+    if (!item) {
+      return;
+    }
+
+    const product = products.find((p) => p.id === item.id);
+    if (!product || !product.dbKey) {
+      showToast("Unable to rate this item.", "error");
+      return;
+    }
+
+    const oldAverage = Number(product.rating) || 0;
+    const oldCount = Number(product.ratingCount) || 0;
+    const newCount = oldCount + 1;
+    const newAverage = (oldAverage * oldCount + ratingValue) / newCount;
+
+    await update(dbRef(db, `products/${product.dbKey}`), {
+      rating: newAverage,
+      ratingCount: newCount,
+    });
+
+    await update(dbRef(db, `orders/${orderKey}/ratedItems`), {
+      [itemIndex]: ratingValue,
+    });
+
+    showToast("Thanks for rating your order!", "success");
+  };
+
   const handleSubmitRequest = async (event) => {
     event.preventDefault();
     setToast(null);
@@ -1427,6 +1469,41 @@ const GIFTOWebsite = () => {
                     </p>
                   ) : (
                     <p className="order-summary-text">No message card added.</p>
+                  )}
+                  {order.status === "delivered" && (
+                    <div className="order-rating-list">
+                      {order.items.map((item, itemIndex) => {
+                        const existingRating = order.ratedItems?.[itemIndex];
+                        return (
+                          <div key={itemIndex} className="order-rating-row">
+                            <span className="order-rating-item-name">
+                              {item.name}
+                            </span>
+                            {existingRating ? (
+                              <span className="order-rating-done">
+                                Rated {existingRating} ★
+                              </span>
+                            ) : (
+                              <div className="order-rating-stars">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <button
+                                    key={star}
+                                    type="button"
+                                    className="order-rating-star-button"
+                                    title={`Rate ${star} star${star === 1 ? "" : "s"}`}
+                                    onClick={() =>
+                                      handleRateOrderItem(order.dbKey, itemIndex, star)
+                                    }
+                                  >
+                                    ★
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                   {["pending", "processing"].includes(
                     order.status || "pending",

@@ -333,6 +333,53 @@
   font-weight: 500;
 }
 
+.order-rating-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.5rem 0;
+}
+
+.order-rating-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.order-rating-item-name {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.order-rating-stars {
+  display: flex;
+  gap: 0.1rem;
+}
+
+.order-rating-star-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: #d1d5db;
+  padding: 2px;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.order-rating-star-button:hover {
+  color: #fbbf24;
+  transform: scale(1.15);
+}
+
+.order-rating-done {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fbbf24;
+}
+
 .rating-no-reviews {
   font-size: 0.9rem;
   color: var(--muted);

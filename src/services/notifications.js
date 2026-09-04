@@ -660,8 +660,8 @@ export const submitRequestToGoogleSheet = async (requestData) => {
 
     const payload = {
       action: "submitRequest",
-      requestId: requestId,
       timestamp: timestamp,
+      requestId: requestId,
       itemName: String(requestData.itemName || ""),
       category: String(requestData.category || ""),
       phone: String(requestData.phone || ""),
@@ -759,10 +759,10 @@ export const recordDeliveredOrderToRevenue = async (orderData) => {
     const payload = {
       action: "recordRevenue",
       timestamp: getFormattedTimestamp(),
-      amount: String(orderData.total || ""),
-      paymentMethod: String(orderData.paymentMethod || ""),
       customer: String(orderData.name || ""),
+      amount: String(orderData.total || ""),
       items: orderData.items ? orderData.items.map((i) => `${i.name} (x${i.quantity})`).join(", ") : "",
+      paymentMethod: String(orderData.paymentMethod || ""),
     };
 
     console.log("Recording revenue in Google Sheet:", payload);

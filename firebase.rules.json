@@ -3,7 +3,15 @@
     "products": {
       ".read": true,
       ".write": "auth != null && auth.token.email === 'giftoo.storee@gmail.com'",
-      ".indexOn": ["id"]
+      ".indexOn": ["id"],
+      "$productId": {
+        "rating": {
+          ".write": "auth != null"
+        },
+        "ratingCount": {
+          ".write": "auth != null"
+        }
+      }
     },
     "users": {
       "$uid": {
