@@ -68,6 +68,20 @@ const EditProductModal = ({
               className="admin-input"
             />
           </label>
+          <label className="admin-label">
+            Old Price (LE) - Optional
+            <input
+              type="number"
+              value={editingProduct.oldPrice || ""}
+              onChange={(e) =>
+                setEditingProduct({
+                  ...editingProduct,
+                  oldPrice: e.target.value === "" ? null : e.target.value,
+                })
+              }
+              className="admin-input"
+            />
+          </label>
           <div className="admin-label">
             <p style={{ marginBottom: "10px", fontWeight: "600" }}>Product Colors</p>
             {Object.keys(editingProduct.colors || {}).map((colorName) => (

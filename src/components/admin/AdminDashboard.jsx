@@ -364,6 +364,7 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
       name: editingProduct.name,
       category: editingProduct.category,
       price: Number(editingProduct.price),
+      oldPrice: editingProduct.oldPrice ? Number(editingProduct.oldPrice) : null,
       inventory: Number.isFinite(Number(editingProduct.inventory))
         ? Number(editingProduct.inventory)
         : 0,
