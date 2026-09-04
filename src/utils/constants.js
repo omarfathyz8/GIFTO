@@ -1,5 +1,6 @@
 export const categories = [
   "All",
+  "Top Products",
   // "Sets",
   "Bookmarks",
   "Bookmarks2",

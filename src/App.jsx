@@ -38,7 +38,7 @@ const GIFTOWebsite = () => {
   const [freeShipping, setFreeShipping] = useState(false);
   const [metroStation, setMetroStation] = useState("");
   const [wishlists, setWishlists] = useState(new Set());
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("Top Products");
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [authMode, setAuthMode] = useState("login");
@@ -1087,6 +1087,12 @@ const GIFTOWebsite = () => {
 
   const filteredProducts = React.useMemo(() => {
     return products.filter((product) => {
+      if (searchQuery === "Top Products") {
+        const rating = product.rating || 0;
+        const matchesBudget = !budgetLimit || product.price <= Number(budgetLimit);
+        return rating > 4.5 && matchesBudget;
+      }
+
       const query = searchQuery.toLowerCase();
       const productCat = product.category.toLowerCase();
       const matchesSearch = (
