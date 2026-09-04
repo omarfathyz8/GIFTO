@@ -10,6 +10,9 @@ const EditProductModal = ({
   handleCancelEditProduct,
   editingColorName,
   setEditingColorName,
+  newRatingInput,
+  setNewRatingInput,
+  handleAddRating,
 }) => {
   if (!editingProduct) return null;
 
@@ -81,6 +84,40 @@ const EditProductModal = ({
               }
               className="admin-input"
             />
+          </label>
+          <label className="admin-label">
+            Current rating
+            <input
+              type="text"
+              value={
+                editingProduct.rating
+                  ? `${Number(editingProduct.rating).toFixed(1)} ★ (${editingProduct.ratingCount || 0} reviews)`
+                  : "No reviews yet"
+              }
+              disabled
+              className="admin-input"
+            />
+          </label>
+          <label className="admin-label">
+            Add a new rating (1-5)
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                type="number"
+                min="1"
+                max="5"
+                step="0.5"
+                value={newRatingInput}
+                onChange={(e) => setNewRatingInput(e.target.value)}
+                className="admin-input"
+              />
+              <button
+                type="button"
+                className="primary-button small"
+                onClick={handleAddRating}
+              >
+                Add Rating
+              </button>
+            </div>
           </label>
           <div className="admin-label">
             <p style={{ marginBottom: "10px", fontWeight: "600" }}>Product Colors</p>

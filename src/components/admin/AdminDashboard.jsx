@@ -41,6 +41,7 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
   const [editingDeliveryTime, setEditingDeliveryTime] = useState(null);
   const [deliveryTimeInput, setDeliveryTimeInput] = useState("");
   const [editingColorName, setEditingColorName] = useState("");
+  const [newRatingInput, setNewRatingInput] = useState("");
 
   useEffect(() => {
     const productsRef = dbRef(db, "products");
@@ -329,12 +330,41 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
       return;
     }
     setEditingProduct({ ...product });
+    setNewRatingInput("");
     setToast(null);
   };
 
   const handleCancelEditProduct = () => {
     setEditingProduct(null);
+    setNewRatingInput("");
     setToast(null);
+  };
+
+  const handleAddRating = async () => {
+    if (!editingProduct?.dbKey) {
+      showToast("Unable to update product.", "error");
+      return;
+    }
+
+    const newRating = Number(newRatingInput);
+    if (!newRatingInput || Number.isNaN(newRating) || newRating < 1 || newRating > 5 || (newRating * 2) % 1 !== 0) {
+      showToast("Enter a rating between 1 and 5 in half-star steps.", "error");
+      return;
+    }
+
+    const oldAverage = Number(editingProduct.rating) || 0;
+    const oldCount = Number(editingProduct.ratingCount) || 0;
+    const newCount = oldCount + 1;
+    const newAverage = (oldAverage * oldCount + newRating) / newCount;
+
+    await update(dbRef(db, `products/${editingProduct.dbKey}`), {
+      rating: newAverage,
+      ratingCount: newCount,
+    });
+
+    setEditingProduct({ ...editingProduct, rating: newAverage, ratingCount: newCount });
+    setNewRatingInput("");
+    showToast("Rating added successfully.", "success");
   };
 
   const handleUpdateProduct = async (event) => {
@@ -557,6 +587,9 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
         handleCancelEditProduct={handleCancelEditProduct}
         editingColorName={editingColorName}
         setEditingColorName={setEditingColorName}
+        newRatingInput={newRatingInput}
+        setNewRatingInput={setNewRatingInput}
+        handleAddRating={handleAddRating}
       />
 
       <EditDeliveryModal
