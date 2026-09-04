@@ -13,6 +13,7 @@ export const categories = [
   "Tech Accessories",
   // "Watches",
   // "Decor",
+  // "Religious",
 ];
 
 export const ADMIN_EMAIL = "giftoo.storee@gmail.com";

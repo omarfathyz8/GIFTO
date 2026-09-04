@@ -508,12 +508,10 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
       <main className="admin-main">
         <BusinessOverview
           products={products}
-          allOrders={allOrders}
-          requests={requests}
           users={users}
         />
 
-        <FinancialTracker allOrders={allOrders} />
+        <FinancialTracker />
 
         <ManageRequests
           requests={requests}
