@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { X, Upload } from "lucide-react";
 import { colorMap } from "../../utils/colorMap";
+import { fetchOrdersFromSheet } from "../../services/googleSheets";
 
 const ManageInventory = ({
   products,
@@ -16,23 +17,39 @@ const ManageInventory = ({
   handleUpdateProduct,
   handleDeleteProduct,
   categories,
-  allOrders = [],
 }) => {
   const [newColorName, setNewColorName] = useState("");
   const [editingColorName, setEditingColorName] = useState("");
+  const [deliveredOrders, setDeliveredOrders] = useState([]);
+
+  const loadDeliveredOrders = useCallback(async () => {
+    try {
+      const orders = await fetchOrdersFromSheet();
+      setDeliveredOrders(orders.filter((order) => order.status === "delivered"));
+    } catch (err) {
+      console.error("Failed to load orders from Google Sheets:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDeliveredOrders();
+  }, [loadDeliveredOrders]);
 
   const getProductSoldCount = (productName) => {
     let totalSold = 0;
-    allOrders.forEach(order => {
-      if (order.status === 'delivered' && order.items && Array.isArray(order.items)) {
-        order.items.forEach(item => {
-          if (item.name === productName) {
-            totalSold += item.quantity || 0;
-          }
-        });
-      }
+    deliveredOrders.forEach((order) => {
+      order.items.forEach((item) => {
+        if (item.name === productName) {
+          totalSold += item.quantity || 0;
+        }
+      });
     });
     return totalSold;
+  };
+
+  const getProductTotalStock = (product) => {
+    if (!product.colors || typeof product.colors !== "object") return 0;
+    return Object.values(product.colors).reduce((sum, color) => sum + (color?.stock || 0), 0);
   };
 
   const getHexColor = (colorName) => {
@@ -282,6 +299,9 @@ const ManageInventory = ({
                     {product.name}
                     <span style={{ fontSize: "0.75em", opacity: 0.6, marginLeft: "8px" }}>
                       Sold: {getProductSoldCount(product.name)}
+                    </span>
+                    <span style={{ fontSize: "0.75em", opacity: 0.6, marginLeft: "8px" }}>
+                      Stock: {getProductTotalStock(product)}
                     </span>
                   </p>
                   <div style={{ display: "flex", gap: "6px", rowGap: "6px", flexWrap: "wrap", alignItems: "center" }}>
