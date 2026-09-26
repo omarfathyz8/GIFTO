@@ -7,6 +7,7 @@ export const colorMap = {
   "blue": "#0000ff",
   "blue2": "#0000ff",
   "teal": "#008080",
+  "teal2": "#008080",
   "cyan": "#62c1fb",
   "purple": "#6c096c",
   "lavender": "#8778b8",
