@@ -80,11 +80,15 @@
 .product-title-wrapper {
   display: flex;
   align-items: center;
+  width: 100%;
+  min-width: 0;
   gap: 0.6rem;
   margin-bottom: 0.8rem;
 }
 
 .product-title {
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
   font-size: 1.2rem;
   color: var(--text);
@@ -94,16 +98,21 @@
 }
 
 .best-seller-badge {
-  display: inline-block;
-  padding: 0.3rem 0.7rem;
-  background: rgba(139, 69, 19, 0.1);
-  color: var(--accent);
-  font-size: 0.75rem;
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin-left: auto;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.32rem 0.55rem;
+  background: linear-gradient(135deg, #fff4cc 0%, #f4d58b 55%, #e7bd65 100%);
+  border: 1px solid rgba(156, 105, 31, 0.28);
+  color: #754515;
+  font-size: 0.66rem;
   font-weight: 700;
-  border-radius: 0.4rem;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(117, 69, 21, 0.16);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
-  margin-left: 5rem;
+  letter-spacing: 0.035em;
   white-space: nowrap;
 }
 

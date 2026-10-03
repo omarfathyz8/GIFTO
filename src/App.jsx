@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from "react";
-import { ShoppingCart, X, Check, Heart, Search, Upload, Info } from "lucide-react";
+import { ShoppingCart, X, Check, Heart, Search, Upload, Info, Sparkles } from "lucide-react";
 import { auth, db } from "./firebase";
 import logoImage from "./assets/logo.png";
 import {
@@ -38,7 +38,7 @@ const GIFTOWebsite = () => {
   const [freeShipping, setFreeShipping] = useState(false);
   const [metroStation, setMetroStation] = useState("");
   const [wishlists, setWishlists] = useState(new Set());
-  const [searchQuery, setSearchQuery] = useState("Top Products");
+  const [searchQuery, setSearchQuery] = useState("Top Rated");
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [authMode, setAuthMode] = useState("login");
@@ -1115,21 +1115,29 @@ const GIFTOWebsite = () => {
     }, 0);
   };
 
-  const bestSellerName = React.useMemo(() => {
-    const counts = {};
-    allOrders.forEach(order => {
-      if (order.items && Array.isArray(order.items)) {
-        order.items.forEach(item => {
-          counts[item.name] = (counts[item.name] || 0) + item.quantity;
-        });
+  const bestSellerProducts = React.useMemo(() => {
+    const bestByCategory = new Map();
+
+    products.forEach((product) => {
+      const category = String(product.category || "").toLowerCase();
+      const ratingCount = Number(product.ratingCount) || 0;
+
+      if (ratingCount === 0) {
+        return;
+      }
+
+      const currentBest = bestByCategory.get(category);
+      if (!currentBest || ratingCount > (Number(currentBest.ratingCount) || 0)) {
+        bestByCategory.set(category, product);
       }
     });
-    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
-  }, [allOrders]);
+
+    return new Set(bestByCategory.values());
+  }, [products]);
 
   const filteredProducts = React.useMemo(() => {
     return products.filter((product) => {
-      if (searchQuery === "Top Products") {
+      if (searchQuery === "Top Rated") {
         const rating = product.rating || 0;
         const matchesBudget = !budgetLimit || product.price <= Number(budgetLimit);
         return rating > 4.5 && matchesBudget;
@@ -1179,11 +1187,7 @@ const GIFTOWebsite = () => {
         <section className="hero">
           <div className="hero-copy">
             <img src={logoImage} alt="GIFTO Logo" className="hero-logo" />
-            <h1>The perfect gift for every celebration</h1>
-            <p className="hero-text">
-              Handpicked leather, perfume, décor and accessories delivered with
-              care and local charm.
-            </p>
+            <h1>The perfect gift for every moment</h1>
             <div className="hero-actions">
               {user && (
                 <button
@@ -1252,8 +1256,16 @@ const GIFTOWebsite = () => {
           ) : (
             (() => {
               const sorted = filteredProducts.sort((a, b) => {
-                if (a.name === bestSellerName) return -1;
-                if (b.name === bestSellerName) return 1;
+                const aIsBestSeller = bestSellerProducts.has(a);
+                const bIsBestSeller = bestSellerProducts.has(b);
+                if (aIsBestSeller !== bIsBestSeller) {
+                  return aIsBestSeller ? -1 : 1;
+                }
+
+                if (searchQuery === "Top Rated") {
+                  return (Number(b.ratingCount) || 0) - (Number(a.ratingCount) || 0);
+                }
+
                 return (b.id || 0) - (a.id || 0);
               });
               return sorted.map((product) => {
@@ -1264,7 +1276,7 @@ const GIFTOWebsite = () => {
                 const images = (colorData?.images || []);
                 const currentIdx = currentImageIndex[product.id] || 0;
                 const currentImage = images[currentIdx];
-                const isBestSeller = product.name === bestSellerName;
+                const isBestSeller = bestSellerProducts.has(product);
 
                 return (
                 <article key={product.id} className="product-card">
@@ -1306,7 +1318,12 @@ const GIFTOWebsite = () => {
                   <p className="product-category">{product.category}</p>
                   <div className="product-title-wrapper">
                     <h2 className="product-title">{product.name}</h2>
-                    {isBestSeller && <span className="best-seller-badge">Best Seller</span>}
+                    {isBestSeller && (
+                      <span className="best-seller-badge">
+                        <Sparkles size={12} aria-hidden="true" />
+                        <span>Best Seller</span>
+                      </span>
+                    )}
                   </div>
                   <p className="product-description">{product.description}</p>
                   <div className="product-meta">

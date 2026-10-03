@@ -1,6 +1,6 @@
 export const categories = [
   "All",
-  "Top Products",
+  "Top Rated",
   // "Sets",
   "Wood Bookmarks",
   "Acrylic Bookmarks",
