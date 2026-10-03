@@ -1,5 +1,6 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import { ADMIN_EMAIL } from "../../utils/constants";
+import { fetchOrdersFromSheet } from "../../services/googleSheets";
 
 const formatDate = (timestamp) => {
   if (!timestamp) return "—";
@@ -14,25 +15,91 @@ const formatDate = (timestamp) => {
   return `${day}/${month}/${year} ${displayHours}:${minutes} ${ampm}`;
 };
 
-const ManageCustomers = ({ users, allOrders }) => {
-  const getCustomerOrders = (userId) => {
-    return allOrders.filter(order => order.userId === userId);
-  };
+const normalizeCustomerName = (name) => String(name || "").trim().toLowerCase();
 
-  const getCustomerSpent = (userId) => {
-    const orders = getCustomerOrders(userId);
-    return orders
-      .filter(o => o.status === 'delivered')
-      .reduce((sum, order) => sum + (order.total || 0), 0);
-  };
+const ManageCustomers = ({ users }) => {
+  const [sheetOrders, setSheetOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [ordersError, setOrdersError] = useState("");
 
-  const getOrderCount = (userId) => {
-    return getCustomerOrders(userId).length;
-  };
+  useEffect(() => {
+    let isActive = true;
 
-  const filteredCustomers = users.filter(user =>
-    user.email !== ADMIN_EMAIL && user.name !== "TESTER"
+    const loadOrders = async () => {
+      try {
+        const orders = await fetchOrdersFromSheet();
+        if (isActive) setSheetOrders(orders);
+      } catch (error) {
+        console.error("Failed to load customer orders from Google Sheets:", error);
+        if (isActive) setOrdersError("Failed to load customer orders from Google Sheets.");
+      } finally {
+        if (isActive) setLoadingOrders(false);
+      }
+    };
+
+    loadOrders();
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const registeredNames = new Set(
+    users.map((user) => normalizeCustomerName(user.name)).filter(Boolean)
   );
+  const sheetCustomers = new Map();
+
+  sheetOrders.forEach((order) => {
+    const normalizedName = normalizeCustomerName(order.name);
+    if (!normalizedName) return;
+
+    let customer = sheetCustomers.get(normalizedName);
+    if (!customer) {
+      customer = {
+        name: order.name.trim(),
+        email: order.email || "",
+        phone: order.phone || "",
+        address: order.address || "",
+        lastOrderAt: order.createdAt || null,
+        orderCount: 0,
+        totalSpent: 0,
+      };
+      sheetCustomers.set(normalizedName, customer);
+    }
+
+    if (order.createdAt && (!customer.lastOrderAt || order.createdAt > customer.lastOrderAt)) {
+      customer.lastOrderAt = order.createdAt;
+    }
+    customer.orderCount += 1;
+    if (order.status === "delivered") {
+      customer.totalSpent += Number(order.total) || 0;
+    }
+    if (!customer.email && order.email) customer.email = order.email;
+    if (!customer.phone && order.phone) customer.phone = order.phone;
+    if (!customer.address && order.address) customer.address = order.address;
+  });
+
+  const registeredCustomers = users
+    .filter((user) => user.email !== ADMIN_EMAIL && user.name !== "TESTER")
+    .map((user) => {
+      const stats = sheetCustomers.get(normalizeCustomerName(user.name));
+      return {
+        user,
+        orderCount: stats?.orderCount || 0,
+        totalSpent: stats?.totalSpent || 0,
+        isRegistered: true,
+      };
+    });
+  const unregisteredCustomers = Array.from(sheetCustomers.entries())
+    .filter(([normalizedName]) => !registeredNames.has(normalizedName))
+    .map(([normalizedName, customer]) => ({
+      user: { ...customer, uid: `sheet-${normalizedName}` },
+      orderCount: customer.orderCount,
+      totalSpent: customer.totalSpent,
+      isRegistered: false,
+    }));
+
+  const sortedCustomers = [...registeredCustomers, ...unregisteredCustomers]
+    .sort((a, b) => b.totalSpent - a.totalSpent);
 
   return (
     <section className="admin-section">
@@ -43,58 +110,69 @@ const ManageCustomers = ({ users, allOrders }) => {
       </div>
 
       <div className="admin-card">
-        {filteredCustomers.length === 0 ? (
+        {ordersError && <p role="alert">{ordersError}</p>}
+        {sortedCustomers.length === 0 ? (
           <p className="loading-state">No customers yet.</p>
         ) : (
           <div className="customers-list">
-            {filteredCustomers.map((user) => (
-              <div key={user.uid} className="customer-card">
-                <div className="customer-info">
-                  <div>
-                    <div className="customer-name-row">
-                      <p className="customer-name">{user.name || "No name"}</p>
-                      {user.createdAt && (
-                        <span className="member-since">Member since {formatDate(user.createdAt)}</span>
-                      )}
-                      {user.lastSeen && (
-                        <span className="last-seen">Last seen: {formatDate(user.lastSeen)}</span>
-                      )}
-                    </div>
-                    <div className="customer-contact">
-                      <a href={`mailto:${user.email}`} className="contact-link email-link" title="Send email">
-                        {user.email}
-                      </a>
-                      {user.phone && (
-                        <>
-                          <span className="contact-separator">|</span>
-                          <a href={`tel:${user.phone}`} className="contact-link phone-link" title="Call customer">
-                            {user.phone}
+            {sortedCustomers.map(({ user, orderCount, totalSpent, isRegistered }) => {
+              return (
+                <div key={user.uid} className="customer-card">
+                  <div className="customer-info">
+                    <div>
+                      <div className="customer-name-row">
+                        <p className="customer-name">{user.name || "No name"}</p>
+                        {!isRegistered && (
+                          <>
+                            <span className="last-seen">Not registered</span>
+                            <span className="last-seen">Last order: {formatDate(user.lastOrderAt)}</span>
+                          </>
+                        )}
+                        {user.createdAt && (
+                          <span className="member-since">Member since {formatDate(user.createdAt)}</span>
+                        )}
+                        {user.lastSeen && (
+                          <span className="last-seen">Last seen: {formatDate(user.lastSeen)}</span>
+                        )}
+                      </div>
+                      <div className="customer-contact">
+                        {user.email && (
+                          <a href={`mailto:${user.email}`} className="contact-link email-link" title="Send email">
+                            {user.email}
                           </a>
-                        </>
-                      )}
-                      {user.address && (
-                        <>
-                          <span className="contact-separator">|</span>
-                          <a href={`https://maps.google.com/?q=${encodeURIComponent(user.address)}`} target="_blank" rel="noopener noreferrer" className="contact-link" title="Customer location">
-                            {user.address}
-                          </a>
-                        </>
-                      )}
+                        )}
+                        {user.phone && (
+                          <>
+                            {user.email && <span className="contact-separator">|</span>}
+                            <a href={`tel:${user.phone}`} className="contact-link phone-link" title="Call customer">
+                              {user.phone}
+                            </a>
+                          </>
+                        )}
+                        {user.address && (
+                          <>
+                            {(user.email || user.phone) && <span className="contact-separator">|</span>}
+                            <a href={`https://maps.google.com/?q=${encodeURIComponent(user.address)}`} target="_blank" rel="noopener noreferrer" className="contact-link" title="Customer location">
+                              {user.address}
+                            </a>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="customer-stats">
-                    <div className="stat-item">
-                      <span className="stat-label">Orders</span>
-                      <span className="stat-value">{getOrderCount(user.uid)}</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-label">Total Spent</span>
-                      <span className="stat-value">{getCustomerSpent(user.uid)} LE</span>
+                    <div className="customer-stats">
+                      <div className="stat-item">
+                        <span className="stat-label">Orders</span>
+                        <span className="stat-value">{loadingOrders || ordersError ? "—" : orderCount}</span>
+                      </div>
+                      <div className="stat-item">
+                        <span className="stat-label">Total Spent</span>
+                        <span className="stat-value">{loadingOrders || ordersError ? "—" : `${totalSpent} LE`}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

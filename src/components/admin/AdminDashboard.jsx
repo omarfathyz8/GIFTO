@@ -557,7 +557,6 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
 
         <ManageCustomers
           users={users}
-          allOrders={allOrders}
         />
 
         <ManageInventory
