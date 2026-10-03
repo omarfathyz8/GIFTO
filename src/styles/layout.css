@@ -398,6 +398,24 @@ main {
   line-height: 1.8;
 }
 
+.footer-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.footer-contact-icon {
+  flex: 0 0 1rem;
+  color: rgba(247, 237, 227, 0.9);
+}
+
+.footer-payment-note {
+  margin-left: 1.6rem !important;
+  color: rgba(247, 237, 227, 0.72) !important;
+  font-size: 0.85rem;
+  line-height: 1.5 !important;
+}
+
 .footer-column a {
   color: var(--muted);
 }
