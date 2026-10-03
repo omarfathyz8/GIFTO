@@ -14,6 +14,46 @@ main {
   padding-top: 3.5rem;
 }
 
+.scroll-to-top {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 90;
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.scroll-to-top:hover {
+  background: var(--accent-strong);
+  transform: translateY(-2px);
+}
+
+.scroll-to-top:focus-visible {
+  outline: 3px solid var(--accent-strong);
+  outline-offset: 3px;
+}
+
+.scroll-to-top svg {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+@media (max-width: 640px) {
+  .scroll-to-top {
+    right: 1rem;
+    bottom: 1rem;
+  }
+}
+
 .countdown-expired ~ header ~ main {
   padding-top: 0;
 }

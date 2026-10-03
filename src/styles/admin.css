@@ -13,6 +13,68 @@
   color: var(--accent);
 }
 
+.admin-section-nav {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.admin-nav-button {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.admin-nav-button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(139, 69, 19, 0.25);
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 4px 12px rgba(94, 47, 7, 0.12);
+}
+
+.admin-nav-button:focus-visible {
+  border-color: var(--accent-strong);
+  background: var(--surface);
+  color: var(--accent);
+  outline: 3px solid rgba(139, 69, 19, 0.3);
+  outline-offset: 2px;
+  box-shadow: 0 4px 12px rgba(94, 47, 7, 0.12);
+}
+
+.admin-nav-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-nav-button {
+    transition: none;
+  }
+}
+
+.admin-nav-target {
+  scroll-margin-top: 9rem;
+}
+
 .admin-main {
   max-width: 1200px;
   margin: 0 auto;
@@ -205,6 +267,24 @@
   }
 }
 
+@media (max-width: 640px) {
+  .admin-dashboard-view .admin-section-nav {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: flex-start;
+    padding: 0.25rem 0 0.5rem;
+  }
+
+  .admin-dashboard-view .admin-nav-button {
+    padding: 0.45rem 0.65rem;
+    font-size: 0.82rem;
+  }
+
+  .admin-nav-target {
+    scroll-margin-top: 12rem;
+  }
+}
+
 /* Inventory status indicators */
 .inventory-status {
   padding: 0.1rem 0.7rem;
@@ -279,53 +359,175 @@
   margin-top: 0.5rem;
 }
 
-/* Insights card with tips/warnings */
-.insights-card {
-  background: var(--surface);
-  border-radius: 1.5rem;
-  padding: 2rem;
-  box-shadow: var(--shadow);
+/* Admin charts */
+.charts-section {
   margin-top: 1rem;
 }
 
-.insights-card h3 {
+.charts-section > h3 {
   color: var(--accent);
-  margin: 0 0 1.5rem;
+  margin: 0 0 1rem;
   font-size: 1.4rem;
 }
 
-.insights-list {
-  list-style: none;
-  padding: 0;
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.chart-card {
+  min-width: 0;
+  padding: 1.5rem;
+  background: var(--surface);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.revenue-chart-card {
+  grid-column: 1 / -1;
+}
+
+.chart-card h4 {
   margin: 0;
-  display: flex;
-  flex-direction: column;
+  color: var(--text);
+  font-size: 1.1rem;
+}
+
+.chart-description {
+  margin: 0.35rem 0 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.chart-empty {
+  display: grid;
+  min-height: 11rem;
+  place-items: center;
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.revenue-chart {
+  display: block;
+  width: 100%;
+  height: 400px;
+  overflow: visible;
+}
+
+.chart-grid-line {
+  stroke: var(--border);
+  stroke-dasharray: 4 5;
+}
+
+.chart-axis-label {
+  fill: var(--muted);
+  font-size: 12px;
+}
+
+.revenue-chart-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.revenue-chart-point {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.status-chart-list,
+.products-chart-list {
+  display: grid;
   gap: 1rem;
+  padding-top: 0.4rem;
 }
 
-.insights-list li {
-  padding: 1rem;
-  border-radius: 1rem;
-  font-size: 0.95rem;
-  line-height: 1.5;
+.status-chart-row,
+.products-chart-row {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 0.8fr) minmax(0, 2fr) 2.5rem;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.insight-warning {
-  background: rgba(139, 69, 19, 0.15);
-  color: var(--accent-strong);
-  border-left: 4px solid var(--accent);
+.status-chart-label,
+.products-chart-name {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  text-transform: capitalize;
+  white-space: nowrap;
 }
 
-.insight-info {
-  background: rgba(139, 69, 19, 0.08);
-  color: var(--accent);
-  border-left: 4px solid var(--accent-soft);
+.status-chart-track,
+.products-chart-track {
+  height: 0.75rem;
+  overflow: hidden;
+  background: var(--surface-soft);
+  border-radius: 999px;
 }
 
-.insight-success {
-  background: rgba(22, 163, 74, 0.15);
-  color: #166534;
-  border-left: 4px solid var(--success);
+.status-chart-bar,
+.products-chart-bar {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  transition: width 0.25s ease;
+}
+
+.status-chart-pending {
+  background: #d97706;
+}
+
+.status-chart-processing {
+  background: #2563eb;
+}
+
+.status-chart-shipped {
+  background: #7c3aed;
+}
+
+.status-chart-delivered {
+  background: var(--success);
+}
+
+.status-chart-cancelled {
+  background: var(--danger);
+}
+
+.products-chart-bar {
+  background: var(--accent);
+}
+
+.status-chart-count,
+.products-chart-count {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+  .charts-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .chart-card,
+  .revenue-chart-card,
+  .top-products-chart-card {
+    grid-column: 1;
+  }
+
+  .chart-card {
+    padding: 1.1rem;
+  }
 }
 
 /* Inventory grid layout */

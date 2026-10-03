@@ -106,16 +106,51 @@ const BusinessOverview = ({ products, users = [] }) => {
     return totalValue;
   })();
 
-  const outOfStockCount = products.filter((p) => {
-    if (!p.colors || typeof p.colors !== "object") return false;
-    return Object.values(p.colors).every((color) => (color.stock || 0) === 0);
-  }).length;
+  const revenueByMonth = (() => {
+    const months = [];
+    const currentDate = new Date();
 
-  const lowStockCount = products.filter((p) => {
-    if (!p.colors || typeof p.colors !== "object") return false;
-    const totalStock = Object.values(p.colors).reduce((sum, color) => sum + (color.stock || 0), 0);
-    return totalStock > 0 && totalStock <= 5;
-  }).length;
+    for (let offset = 5; offset >= 0; offset -= 1) {
+      const monthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - offset, 1);
+      months.push({
+        key: `${monthDate.getFullYear()}-${monthDate.getMonth()}`,
+        label: monthDate.toLocaleDateString("en", { month: "short" }),
+        amount: 0,
+      });
+    }
+
+    const monthsByKey = new Map(months.map((month) => [month.key, month]));
+    delivered.forEach((order) => {
+      if (!order.createdAt) return;
+      const date = new Date(order.createdAt);
+      const month = monthsByKey.get(`${date.getFullYear()}-${date.getMonth()}`);
+      if (month) month.amount += Number(order.total) || 0;
+    });
+
+    return months;
+  })();
+
+  const maxMonthlyRevenue = Math.max(...revenueByMonth.map((month) => month.amount), 0);
+  const orderStatuses = ["pending", "processing", "shipped", "delivered", "cancelled"].map((status) => ({
+    name: status,
+    count: sheetOrders.filter((order) => order.status === status).length,
+  }));
+  const maxOrderStatusCount = Math.max(...orderStatuses.map((status) => status.count), 0);
+
+  const topProducts = (() => {
+    const soldCounts = new Map();
+    delivered.forEach((order) => {
+      order.items.forEach((item) => {
+        if (!item.name) return;
+        soldCounts.set(item.name, (soldCounts.get(item.name) || 0) + (Number(item.quantity) || 0));
+      });
+    });
+
+    return Array.from(soldCounts, ([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  })();
+  const maxProductCount = Math.max(...topProducts.map((product) => product.count), 0);
 
   return (
     <section className="admin-section">
@@ -245,32 +280,119 @@ const BusinessOverview = ({ products, users = [] }) => {
         </div>
       </div>
 
-      <div className="insights-card">
-        <h3>Business Insights & Recommendations</h3>
-        <ul className="insights-list">
-          {pending.length > 5 && (
-            <li className="insight-warning">
-              ⚠️ <strong>High Pending/Processing Orders:</strong> You have{" "}
-              {pending.length} pending or processing orders. Consider processing
-              them to improve delivery times.
-            </li>
-          )}
-          {outOfStockCount > 0 && (
-            <li className="insight-warning">📦 <strong>Out of Stock Alert:</strong> {outOfStockCount} products are completely out of stock. Restock popular items.</li>
-          )}
-          {sheetOrders.length > 0 && cancelled.length > sheetOrders.length * 0.1 && (
-            <li className="insight-warning">📊 <strong>High Cancellation Rate:</strong> Your cancellation rate is above 10%. Review customer feedback.</li>
+      <div className="charts-section">
+        <h3>Important Charts & Graphs</h3>
+        <div className="charts-grid">
+          <article className="chart-card revenue-chart-card">
+            <h4>Revenue Over Time</h4>
+            <p className="chart-description">Delivered orders by order month · last 6 months</p>
+            {loading ? (
+              <p className="chart-empty">Loading chart data…</p>
+            ) : revenueByMonth.every((month) => month.amount === 0) ? (
+              <p className="chart-empty">No delivered-order revenue in this period.</p>
+            ) : (
+              <svg
+                className="revenue-chart"
+                viewBox="0 0 640 260"
+                role="img"
+                aria-label="Revenue over the last six months from delivered orders"
+              >
+                {[0, 1, 2, 3].map((step) => {
+                  const y = 190 - step * 50;
+                  const value = maxMonthlyRevenue * step / 3;
+                  return (
+                    <g key={step}>
+                      <line x1="54" y1={y} x2="620" y2={y} className="chart-grid-line" />
+                      <text x="46" y={y + 4} textAnchor="end" className="chart-axis-label">
+                        {Math.round(value).toLocaleString()}
+                      </text>
+                    </g>
+                  );
+                })}
+                <polyline
+                  className="revenue-chart-line"
+                  points={revenueByMonth.map((month, index) => {
+                    const x = 62 + index * 108;
+                    const y = 190 - (month.amount / maxMonthlyRevenue) * 150;
+                    return `${x},${y}`;
+                  }).join(" ")}
+                />
+                {revenueByMonth.map((month, index) => {
+                  const x = 62 + index * 108;
+                  const y = 190 - (month.amount / maxMonthlyRevenue) * 150;
+                  return (
+                    <g key={month.key}>
+                      <circle cx={x} cy={y} r="5" className="revenue-chart-point">
+                        <title>{`${month.label}: ${month.amount.toLocaleString()} LE`}</title>
+                      </circle>
+                      <text x={x} y="222" textAnchor="middle" className="chart-axis-label">
+                        {month.label}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
             )}
-          {lowStockCount > 0 && (
-            <li className="insight-info">⏰ <strong>Low Inventory:</strong> {lowStockCount} products have low stock (≤5 units). Consider reordering soon.</li>
-          )}
-          {products.length > 0 && (
-            <li className="insight-info">📈 <strong>Total Products:</strong> You have {products.length} products in your catalog. Monitor bestsellers and underperformers.</li>
-          )}
-          {sheetOrders.length > 0 && delivered.length === sheetOrders.length && (
-            <li className="insight-success">✅ <strong>Perfect Delivery:</strong> All orders have been delivered! Excellent performance.</li>
+          </article>
+
+          <article className="chart-card">
+            <h4>Orders by Status</h4>
+            <p className="chart-description">Number of orders in each status</p>
+            {loading ? (
+              <p className="chart-empty">Loading chart data…</p>
+            ) : sheetOrders.length === 0 ? (
+              <p className="chart-empty">No orders to display.</p>
+            ) : (
+              <div className="status-chart-list">
+                {orderStatuses.map((status) => (
+                  <div className="status-chart-row" key={status.name}>
+                    <span className="status-chart-label">{status.name}</span>
+                    <div
+                      className="status-chart-track"
+                      role="img"
+                      aria-label={`${status.name}: ${status.count} orders`}
+                    >
+                      <span
+                        className={`status-chart-bar status-chart-${status.name}`}
+                        style={{ width: `${maxOrderStatusCount ? status.count / maxOrderStatusCount * 100 : 0}%` }}
+                      />
+                    </div>
+                    <span className="status-chart-count">{status.count}</span>
+                  </div>
+                ))}
+              </div>
             )}
-        </ul>
+          </article>
+
+          <article className="chart-card top-products-chart-card">
+            <h4>Top-Selling Products</h4>
+            <p className="chart-description">Units sold from delivered orders</p>
+            {loading ? (
+              <p className="chart-empty">Loading chart data…</p>
+            ) : topProducts.length === 0 ? (
+              <p className="chart-empty">No delivered product sales to display.</p>
+            ) : (
+              <div className="products-chart-list">
+                {topProducts.map((product) => (
+                  <div className="products-chart-row" key={product.name}>
+                    <span className="products-chart-name" title={product.name}>{product.name}</span>
+                    <div
+                      className="products-chart-track"
+                      role="img"
+                      aria-label={`${product.name}: ${product.count} units sold`}
+                    >
+                      <span
+                        className="products-chart-bar"
+                        style={{ width: `${product.count / maxProductCount * 100}%` }}
+                      />
+                    </div>
+                    <span className="products-chart-count">{product.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </article>
+        </div>
       </div>
     </section>
   );

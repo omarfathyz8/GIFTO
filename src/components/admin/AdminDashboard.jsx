@@ -19,6 +19,7 @@ import ManageOrders from "./ManageOrders";
 import ManageCustomers from "./ManageCustomers";
 import EditProductModal from "./EditProductModal";
 import EditDeliveryModal from "./EditDeliveryModal";
+import { ScrollToTop } from "../layout";
 import "../../App.css";
 
 const AdminDashboard = ({ user, handleSignOut, categories }) => {
@@ -495,16 +496,46 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
 
   const dismissToast = () => setToast(null);
 
+  const navigateToSection = (sectionId) => {
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(sectionId)?.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  };
+
+  const adminSections = [
+    { id: "admin-overview", label: "Overview" },
+    { id: "admin-finances", label: "Finances" },
+    { id: "admin-requests", label: "Requests" },
+    { id: "admin-orders", label: "Orders" },
+    { id: "admin-customers", label: "Customers" },
+    { id: "admin-inventory", label: "Inventory" },
+  ];
+
   return (
     <div className="app-shell admin-dashboard-view">
+      <ScrollToTop />
       <header className="site-header admin-header">
         <div className="header-inner">
           <div className="brand">
             <img src={logoImage} alt="GIFTO Logo" className="brand-logo" />
             <div>
-              <p className="brand-title">GIFTO Admin Dashboard</p>
+              <p className="brand-title">Admin Dashboard</p>
             </div>
           </div>
+          <nav className="admin-section-nav" aria-label="Admin dashboard sections">
+            {adminSections.map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                className="admin-nav-button"
+                onClick={() => navigateToSection(section.id)}
+              >
+                {section.label}
+              </button>
+            ))}
+          </nav>
           <div className="header-actions">
             <button
               type="button"
@@ -536,44 +567,56 @@ const AdminDashboard = ({ user, handleSignOut, categories }) => {
       )}
 
       <main className="admin-main">
-        <BusinessOverview
-          products={products}
-          users={users}
-        />
+        <div id="admin-overview" className="admin-nav-target">
+          <BusinessOverview
+            products={products}
+            users={users}
+          />
+        </div>
 
-        <FinancialTracker />
+        <div id="admin-finances" className="admin-nav-target">
+          <FinancialTracker />
+        </div>
 
-        <ManageRequests
-          requests={requests}
-          updateRequestStatus={updateRequestStatus}
-        />
+        <div id="admin-requests" className="admin-nav-target">
+          <ManageRequests
+            requests={requests}
+            updateRequestStatus={updateRequestStatus}
+          />
+        </div>
 
-        <ManageOrders
-          allOrders={allOrders}
-          updateOrderStatus={updateOrderStatus}
-          setEditingDeliveryTime={setEditingDeliveryTime}
-          setDeliveryTimeInput={setDeliveryTimeInput}
-        />
+        <div id="admin-orders" className="admin-nav-target">
+          <ManageOrders
+            allOrders={allOrders}
+            updateOrderStatus={updateOrderStatus}
+            setEditingDeliveryTime={setEditingDeliveryTime}
+            setDeliveryTimeInput={setDeliveryTimeInput}
+          />
+        </div>
 
-        <ManageCustomers
-          users={users}
-        />
+        <div id="admin-customers" className="admin-nav-target">
+          <ManageCustomers
+            users={users}
+          />
+        </div>
 
-        <ManageInventory
-          products={products}
-          newProduct={newProduct}
-          setNewProduct={setNewProduct}
-          editingProduct={editingProduct}
-          setEditingProduct={setEditingProduct}
-          uploadingImage={uploadingImage}
-          handleImageUpload={handleImageUpload}
-          handleAddProduct={handleAddProduct}
-          handleStartEditProduct={handleStartEditProduct}
-          handleCancelEditProduct={handleCancelEditProduct}
-          handleUpdateProduct={handleUpdateProduct}
-          handleDeleteProduct={handleDeleteProduct}
-          categories={categories}
-        />
+        <div id="admin-inventory" className="admin-nav-target">
+          <ManageInventory
+            products={products}
+            newProduct={newProduct}
+            setNewProduct={setNewProduct}
+            editingProduct={editingProduct}
+            setEditingProduct={setEditingProduct}
+            uploadingImage={uploadingImage}
+            handleImageUpload={handleImageUpload}
+            handleAddProduct={handleAddProduct}
+            handleStartEditProduct={handleStartEditProduct}
+            handleCancelEditProduct={handleCancelEditProduct}
+            handleUpdateProduct={handleUpdateProduct}
+            handleDeleteProduct={handleDeleteProduct}
+            categories={categories}
+          />
+        </div>
       </main>
 
       <EditProductModal
